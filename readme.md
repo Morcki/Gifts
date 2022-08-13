@@ -16,4 +16,4 @@ pass
 
 # Suggestions
 
-- [] Build the whole blueprint of this hub
+- [ ] Build the whole blueprint of this hub
