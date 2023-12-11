@@ -1,0 +1,74 @@
+#version 460
+#extension GL_KHR_shader_subgroup_basic: require
+#extension GL_KHR_shader_subgroup_shuffle : require
+#extension GL_KHR_shader_subgroup_arithmetic : require
+#extension GL_KHR_shader_subgroup_ballot : require
+
+#define STATUS_X 0
+#define STATUS_B 1 // block-level aggregate ready
+#define STATUS_G 2 // grid-level prefix sum ready
+#define STATUS_FLAG_LEN 2
+#define STATUS_FLAG_MASK 3
+
+#define THREADS_PER_WARP 32
+#define WARPS_PER_BLOCK 32
+#define THREADS_PER_BLOCK (THREADS_PER_WARP * WARPS_PER_BLOCK)
+#define ELEMENTS_PER_THREAD 2
+#define ELEMENTS_PER_WARP (ELEMENTS_PER_THREAD * THREADS_PER_WARP)
+#define ELEMENTS_PER_BLOCK (ELEMENTS_PER_WARP * WARPS_PER_BLOCK)
+
+layout(binding = 45) buffer photon_bin_array {
+    int[] photon_bins;
+};
+
+layout(local_size_x = THREADS_PER_BLOCK, local_size_y = 1, local_size_z = 1) in;
+
+shared int block_level[WARPS_PER_BLOCK];
+
+void main() {
+    int thread_index = int(gl_SubgroupInvocationID);
+    int warp_index = int(gl_SubgroupID);
+    int block_index = int(gl_WorkGroupID.x);
+    // prefix sum within 64 elements
+    int reg1 = photon_bins[block_index * ELEMENTS_PER_BLOCK + warp_index * ELEMENTS_PER_WARP + thread_index];
+    int reg2 = photon_bins[block_index * ELEMENTS_PER_BLOCK + warp_index * ELEMENTS_PER_WARP + THREADS_PER_WARP + thread_index];
+    reg1 >>= STATUS_FLAG_LEN;
+    reg2 >>= STATUS_FLAG_LEN;
+    reg1 = subgroupInclusiveAdd(reg1);
+    reg2 = subgroupInclusiveAdd(reg2);
+    reg2 += subgroupShuffle(reg1, THREADS_PER_WARP - 1);
+    if (thread_index + 1 == THREADS_PER_WARP) block_level[warp_index] = reg2;
+    memoryBarrierShared();
+    barrier();
+    if (warp_index == 0) {
+        // exclusive prefix sum of each warp within 2048 elements
+        int reg3 = block_level[thread_index];
+        int reg4 = subgroupInclusiveAdd(reg3);
+        atomicExchange(photon_bins[block_index * ELEMENTS_PER_BLOCK + (thread_index + 1) * ELEMENTS_PER_WARP - 1], reg4 << STATUS_FLAG_LEN | STATUS_B);
+        reg3 = reg4 - reg3;
+        // grid level exclusive prefix sum of each warp
+        int status_flag = STATUS_X;
+        for (int i = block_index - 1; i != -1; i--) {
+            for (int j = 2 * WARPS_PER_BLOCK - 1; j != -1; j--) {
+                int probe_index = i * ELEMENTS_PER_BLOCK + j * THREADS_PER_WARP + thread_index;
+                int reg4 = atomicAdd(photon_bins[probe_index], 0);
+                for (int k = THREADS_PER_WARP - 1; k != -1; k--) {
+                    int reg5 = subgroupShuffle(reg4, k);
+                    status_flag = reg5 & STATUS_FLAG_MASK;
+                    reg5 >>= STATUS_FLAG_LEN;
+                    reg3 += reg5;
+                    if (status_flag != STATUS_X) break;
+                }
+                if (status_flag != STATUS_X) break;
+            }
+            if (status_flag == STATUS_G) break;
+        }
+        block_level[thread_index] = reg3;
+    }
+    memoryBarrierShared();
+    barrier();
+    // write back to global memory
+    int reg3 = block_level[warp_index];
+    atomicExchange(photon_bins[block_index * ELEMENTS_PER_BLOCK + warp_index * ELEMENTS_PER_WARP + thread_index], reg3 + reg1 << STATUS_FLAG_LEN | STATUS_G);
+    atomicExchange(photon_bins[block_index * ELEMENTS_PER_BLOCK + warp_index * ELEMENTS_PER_WARP + THREADS_PER_WARP + thread_index], reg3 + reg2 << STATUS_FLAG_LEN | STATUS_G);
+}
