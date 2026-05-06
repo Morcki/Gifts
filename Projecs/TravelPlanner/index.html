@@ -1605,6 +1605,11 @@
     .route-activity-scroll::-webkit-scrollbar { display: none; }
     .route-timeline-scroll.dragging-timeline,
     .route-activity-scroll.dragging-strip { cursor: grabbing; }
+    .route-timeline-scroll.endpoint-editing {
+      cursor: ew-resize;
+      touch-action: none;
+      overscroll-behavior: contain;
+    }
     .route-timeline-scroll::before,
     .route-timeline-scroll::after,
     .route-activity-scroll::before,
@@ -2514,7 +2519,28 @@
     return { paddingTop, paddingBottom, height, usableHeight };
   }
 
+  function getTimelineVisualReference(timeline) {
+    const markers = Array.from(timeline.querySelectorAll('.hour-marker'));
+    if (markers.length >= 2) {
+      const firstOffset = parseFloat(markers[0].style.top);
+      const lastOffset = parseFloat(markers[markers.length - 1].style.top);
+      const firstRect = markers[0].getBoundingClientRect();
+      const markerMinutes = (markers.length - 1) * 60;
+      const pxPerMin = (lastOffset - firstOffset) / markerMinutes;
+      if (Number.isFinite(pxPerMin) && pxPerMin > 0) {
+        return {
+          firstOffset,
+          firstClientY: firstRect.top + firstRect.height / 2,
+          pxPerMin
+        };
+      }
+    }
+    return null;
+  }
+
   function timelineMinutesToOffset(timeline, minutes) {
+    const visualReference = getTimelineVisualReference(timeline);
+    if (visualReference) return visualReference.firstOffset + clampTime(minutes) * visualReference.pxPerMin;
     const { paddingTop, usableHeight } = getTimelineMetrics(timeline);
     return paddingTop + (clampTime(minutes) / (24 * 60)) * usableHeight;
   }
@@ -2526,28 +2552,15 @@
   }
 
   function getTimelineVisualMinuteScale(timeline) {
-    const markers = Array.from(timeline.querySelectorAll('.hour-marker'));
-    if (markers.length >= 2) {
-      const firstRect = markers[0].getBoundingClientRect();
-      const lastRect = markers[markers.length - 1].getBoundingClientRect();
-      const firstCenterY = firstRect.top + firstRect.height / 2;
-      const lastCenterY = lastRect.top + lastRect.height / 2;
-      const minutes = (markers.length - 1) * 60;
-      const pxPerMin = (lastCenterY - firstCenterY) / minutes;
-      if (Number.isFinite(pxPerMin) && pxPerMin > 0) return pxPerMin;
-    }
+    const visualReference = getTimelineVisualReference(timeline);
+    if (visualReference) return visualReference.pxPerMin;
     const { usableHeight } = getTimelineMetrics(timeline);
     return usableHeight / (24 * 60);
   }
 
   function timelineClientYToMinutes(timeline, clientY) {
-    const markers = Array.from(timeline.querySelectorAll('.hour-marker'));
-    if (markers.length >= 2) {
-      const firstRect = markers[0].getBoundingClientRect();
-      const firstCenterY = firstRect.top + firstRect.height / 2;
-      const pxPerMin = getTimelineVisualMinuteScale(timeline);
-      return clampTime(Math.round((clientY - firstCenterY) / pxPerMin));
-    }
+    const visualReference = getTimelineVisualReference(timeline);
+    if (visualReference) return clampTime(Math.round((clientY - visualReference.firstClientY) / visualReference.pxPerMin));
     const rect = timeline.getBoundingClientRect();
     return timelineOffsetToMinutes(timeline, clientY - rect.top + timeline.scrollTop);
   }
@@ -3068,10 +3081,10 @@
     const width = mobileRoute ? 420 : 520;
     const leftPad = mobileRoute ? 14 : 18;
     const rightPad = mobileRoute ? 14 : 18;
-    const topPad = mobileRoute ? 26 : 36;
-    const laneGap = mobileRoute ? 24 : 34;
+    const topPad = mobileRoute ? 34 : 36;
+    const laneGap = mobileRoute ? 34 : 34;
     const usableWidth = width - leftPad - rightPad;
-    const height = topPad + timeline.laneCount * laneGap + (mobileRoute ? 8 : 14);
+    const height = topPad + timeline.laneCount * laneGap + (mobileRoute ? 18 : 14);
     const ticks = [0, 3, 6, 9, 12, 15, 18, 21, 24];
     const positioned = timeline.segments.map(segment => {
       const x1 = leftPad + (usableWidth * segment.startMin) / (24 * 60);
@@ -3123,8 +3136,8 @@
         ${positioned.map(segment => `
           <g class="route-timeline-segment" data-activity-index="${segment.activityIndex}" data-center-x="${segment.midX}" tabindex="0" role="button" aria-label="查看 ${escapeHtml(segment.title)} 时间段">
             <line class="route-timeline-line" x1="${segment.x1}" y1="${segment.y}" x2="${segment.x2}" y2="${segment.y}" stroke="${segment.color}" stroke-width="${mobileRoute ? (segment.isTransport ? 3.8 : 3.2) : (segment.isTransport ? 5 : 4)}" stroke-linecap="round" stroke-dasharray="${segment.dash}" opacity="${segment.isTransport ? 0.88 : 0.68}"></line>
-            <circle class="route-timeline-endpoint-hit start" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="16"></circle>
-            <circle class="route-timeline-endpoint-hit end" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="16"></circle>
+            <circle class="route-timeline-endpoint-hit start" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="${mobileRoute ? 24 : 16}"></circle>
+            <circle class="route-timeline-endpoint-hit end" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="${mobileRoute ? 24 : 16}"></circle>
             <circle class="route-timeline-endpoint start${segment.connectsFromPrev ? ' continuous-start' : ''}" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="${mobileRoute ? (segment.isTransport ? 3.1 : 2.8) : (segment.isTransport ? 4 : 3.5)}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
             <circle class="route-timeline-endpoint end${segment.connectsToNext ? ' continuous-end' : ''}" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="${mobileRoute ? (segment.isTransport ? 3.1 : 2.8) : (segment.isTransport ? 4 : 3.5)}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
             ${segment.connectsFromPrev ? `
@@ -3133,7 +3146,7 @@
                 <circle r="2.4" fill="${segment.color}"></circle>
               </g>
               <circle class="route-timeline-connector-hit" cx="${segment.x1}" cy="${segment.y}" r="16"></circle>` : ''}
-            <g class="route-timeline-badge" transform="translate(${segment.midX}, ${segment.y + (mobileRoute ? 12 : 16)})">
+            <g class="route-timeline-badge" transform="translate(${segment.midX}, ${segment.y + (mobileRoute ? 17 : 16)})">
               <rect x="${mobileRoute ? -14 : -18}" y="${mobileRoute ? -8 : -10}" width="${mobileRoute ? 28 : 36}" height="${mobileRoute ? 16 : 20}" rx="${mobileRoute ? 8 : 10}" fill="rgba(255,255,255,0.92)"></rect>
               <text text-anchor="middle" dominant-baseline="central" font-size="${mobileRoute ? 9 : 11}" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
             </g>
@@ -3674,6 +3687,8 @@
     const line = segmentEl.querySelector('.route-timeline-line');
     const start = segmentEl.querySelector('.route-timeline-endpoint.start');
     const end = segmentEl.querySelector('.route-timeline-endpoint.end');
+    const startHit = segmentEl.querySelector('.route-timeline-endpoint-hit.start');
+    const endHit = segmentEl.querySelector('.route-timeline-endpoint-hit.end');
     const connector = segmentEl.querySelector('.route-timeline-connector');
     const badge = segmentEl.querySelector('.route-timeline-badge');
     const pinBadge = segmentEl.querySelector('.route-timeline-pin-badge');
@@ -3686,6 +3701,8 @@
     line.setAttribute('x2', String(safeX2));
     start.setAttribute('cx', String(x1));
     end.setAttribute('cx', String(safeX2));
+    if (startHit) startHit.setAttribute('cx', String(x1));
+    if (endHit) endHit.setAttribute('cx', String(safeX2));
     if (connector) connector.setAttribute('transform', `translate(${x1}, ${y})`);
     badge.setAttribute('transform', `translate(${(x1 + safeX2) / 2}, ${y + 16})`);
     if (pinBadge) pinBadge.setAttribute('transform', `translate(${safeX2 + 12}, ${y - 14})`);
@@ -3706,6 +3723,22 @@
     tooltip.textContent = label;
     tooltip.classList.add('visible');
     tooltip.style.transform = `translate(${clientX - panelRect.left + 10}px, ${clientY - panelRect.top - 30}px)`;
+  }
+
+  function showRouteTimelineEndpointTooltip(routePanel, endpoint, label) {
+    const svg = endpoint?.closest('.route-timeline-svg');
+    if (!svg) return;
+    const tooltip = ensureRouteTimelineTooltip(routePanel);
+    const panelRect = routePanel.getBoundingClientRect();
+    const svgRect = svg.getBoundingClientRect();
+    const viewBox = svg.viewBox.baseVal;
+    const cx = Number(endpoint.getAttribute('cx')) || 0;
+    const cy = Number(endpoint.getAttribute('cy')) || 0;
+    const x = svgRect.left + (cx / Math.max(1, viewBox.width || svgRect.width)) * svgRect.width;
+    const y = svgRect.top + (cy / Math.max(1, viewBox.height || svgRect.height)) * svgRect.height;
+    tooltip.textContent = label;
+    tooltip.classList.add('visible');
+    tooltip.style.transform = `translate(${x - panelRect.left + 10}px, ${y - panelRect.top - 32}px)`;
   }
 
   function hideRouteTimelineTooltip(routePanel) {
@@ -4150,15 +4183,37 @@
     let endpointDragState = null;
     const ENDPOINT_TOUCH_LONG_PRESS_MS = 340;
     const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen';
+    const preventEndpointTouchScroll = (event) => {
+      if (endpointDragState?.scrollLocked) event.preventDefault();
+    };
     const clearEndpointArmTimer = () => {
       if (!endpointDragState?.armTimer) return;
       clearTimeout(endpointDragState.armTimer);
       endpointDragState.armTimer = null;
     };
+    const lockEndpointScroll = () => {
+      if (!endpointDragState || endpointDragState.scrollLocked) return;
+      const scrollWrap = endpointDragState.segment.closest('.route-timeline-scroll');
+      if (scrollWrap) {
+        stopRouteTimelineInertia(scrollWrap);
+        scrollWrap.classList.add('endpoint-editing');
+      }
+      endpointDragState.scrollWrap = scrollWrap;
+      endpointDragState.scrollLocked = true;
+      document.addEventListener('touchmove', preventEndpointTouchScroll, { passive: false });
+    };
+    const unlockEndpointScroll = () => {
+      if (!endpointDragState?.scrollLocked) return;
+      endpointDragState.scrollWrap?.classList.remove('endpoint-editing');
+      endpointDragState.scrollLocked = false;
+      endpointDragState.scrollWrap = null;
+      document.removeEventListener('touchmove', preventEndpointTouchScroll, { passive: false });
+    };
     const armEndpointDrag = () => {
       if (!endpointDragState || endpointDragState.armed) return;
       endpointDragState.armed = true;
       endpointDragState.startX = endpointDragState.lastClientX;
+      lockEndpointScroll();
       endpointDragState.endpoint.classList.add('dragging');
       try {
         endpointDragState.endpoint.setPointerCapture(endpointDragState.pointerId);
@@ -4173,6 +4228,7 @@
       document.removeEventListener('pointerup', onEndpointDragUp);
       document.removeEventListener('pointercancel', onEndpointDragUp);
       clearEndpointArmTimer();
+      unlockEndpointScroll();
       endpointDragState.endpoint.classList.remove('dragging');
       hideRouteTimelineTooltip(routePanel);
       if (endpointDragState.moved) routePanel.dataset.suppressClickUntil = String(Date.now() + 220);
@@ -4225,7 +4281,7 @@
       const label = endpointDragState.endpointType === 'start'
         ? `开始 ${minToTime(endpointDragState.currentStartMin)}`
         : `结束 ${minToTime(endpointDragState.currentEndMin)}`;
-      showRouteTimelineTooltip(routePanel, e.clientX, e.clientY, label);
+      showRouteTimelineEndpointTooltip(routePanel, endpointDragState.endpoint, label);
     };
 
     const onEndpointDragUp = () => stopEndpointDrag(true);
@@ -4553,9 +4609,9 @@
     const mobileRoute = isMobileRouteViewport();
     const leftPad = mobileRoute ? 34 : 44;
     const rightPad = 6;
-    const topPad = mobileRoute ? 19 : 24;
-    const bottomPad = mobileRoute ? 25 : 34;
-    const rowGap = locations.length <= 1 ? 0 : (mobileRoute ? 17 : 24);
+    const topPad = mobileRoute ? 28 : 24;
+    const bottomPad = mobileRoute ? 36 : 34;
+    const rowGap = locations.length <= 1 ? 0 : (mobileRoute ? 28 : 24);
     const minTime = Math.min(...segments.map(segment => segment.startMin));
     const maxTime = Math.max(...segments.map(segment => segment.endMin));
     const paddedStart = Math.max(0, minTime - 16);
@@ -4576,7 +4632,7 @@
       const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 8 : 16));
       const y1 = yForLocation(segment.startLocation);
       const y2 = yForLocation(segment.endLocation);
-      const labelY = Math.min(height - (mobileRoute ? 8 : 10), Math.max(y1, y2) + (mobileRoute ? 11 : 15));
+      const labelY = Math.min(height - (mobileRoute ? 10 : 10), Math.max(y1, y2) + (mobileRoute ? 16 : 15));
       return {
         ...segment,
         x1,
@@ -4651,10 +4707,10 @@
     const mobileRoute = !compact && isMobileRouteViewport();
     const mobilePlanWidth = Math.min(300, 220 + dayRoutes.length * 28);
     const width = compact ? 256 : (mobileRoute ? mobilePlanWidth : Math.max(460, dayRoutes.length * 152));
-    const height = compact ? 70 : (mobileRoute ? 76 : 112);
+    const height = compact ? 70 : (mobileRoute ? 96 : 112);
     const paddingX = compact ? 20 : (mobileRoute ? 42 : 28);
     const usableWidth = width - paddingX * 2;
-    const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 4, -4, 5, -3] : [0, 8, -6, 10, -5]);
+    const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 8, -7, 9, -6] : [0, 8, -6, 10, -5]);
     const pointCount = dayRoutes.length + 1;
     const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getRouteSvgLabelIndices(pointCount, false));
     const pointLabelMaxLen = compact ? 4 : 7;
@@ -4702,7 +4758,7 @@
           if (!labelIndexSet.has(index)) return '';
           const anchor = index === 0 ? 'start' : (index === pointCount - 1 ? 'end' : 'middle');
           const x = index === 0 ? point.x + 2 : (index === pointCount - 1 ? point.x - 2 : point.x);
-          const y = Math.min(height - (compact ? 5 : (mobileRoute ? 5 : 7)), point.y + (compact ? 16 : (mobileRoute ? 14 : (index % 2 === 0 ? 19 : 26))));
+          const y = Math.min(height - (compact ? 5 : (mobileRoute ? 7 : 7)), point.y + (compact ? 16 : (mobileRoute ? 20 : (index % 2 === 0 ? 19 : 26))));
           return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${compact ? 8.5 : (mobileRoute ? 8 : 9)}" fill="#475569" stroke="rgba(255,255,255,0.94)" stroke-width="${mobileRoute && !compact ? 2.4 : 3}" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(point.location || '未定', mobileRoute && !compact ? 5 : pointLabelMaxLen))}</text>`;
         }).join('')}
       </svg>`;
