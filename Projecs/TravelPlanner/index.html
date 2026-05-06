@@ -2527,7 +2527,7 @@
 
   function timelineClientYToMinutes(timeline, clientY) {
     const rect = timeline.getBoundingClientRect();
-    return timelineOffsetToMinutes(timeline, clientY - rect.top);
+    return timelineOffsetToMinutes(timeline, clientY - rect.top + timeline.scrollTop);
   }
 
   function getPointerDragThreshold(pointerEvent, defaultThreshold, touchThreshold) {
@@ -6392,9 +6392,9 @@
     const dayData = plan.days[date];
     const DRAG_ARM_DELAY_MS = 90;
     const TOUCH_EDIT_ARM_DELAY_MS = 360;
-    const TOUCH_SCROLL_CANCEL_PX = 12;
-    const SHORT_BLOCK_EDGE_ZONE_MIN = 22;
-    const SHORT_BLOCK_EDGE_ZONE_MAX = 34;
+    const TOUCH_SCROLL_CANCEL_PX = 22;
+    const SHORT_BLOCK_EDGE_ZONE_MIN = 18;
+    const SHORT_BLOCK_EDGE_ZONE_MAX = 30;
     let dragType = null;
     let startY = 0, origStart, origEnd;
     let moved = false;
@@ -6409,6 +6409,7 @@
     let touchTapStartY = 0;
     let touchTapMoved = false;
     let lastPointerClientY = 0;
+    let dragGestureLocked = false;
     const dragSnapHaptic = { value: null };
     const timeline = document.getElementById(`timeline-${date}`);
     const indicator = document.getElementById(`indicator-${date}`);
@@ -6431,6 +6432,22 @@
       touchEditArmTimer = null;
     };
 
+    const preventDragTouchScroll = (event) => {
+      if (dragGestureLocked) event.preventDefault();
+    };
+
+    const lockDragGesture = () => {
+      if (dragGestureLocked) return;
+      dragGestureLocked = true;
+      document.addEventListener('touchmove', preventDragTouchScroll, { passive: false });
+    };
+
+    const unlockDragGesture = () => {
+      if (!dragGestureLocked) return;
+      dragGestureLocked = false;
+      document.removeEventListener('touchmove', preventDragTouchScroll, { passive: false });
+    };
+
     const armDragPreview = () => {
       if (moved) return;
       block.classList.add('drag-armed');
@@ -6450,7 +6467,7 @@
       if (!isTouchPointer(event)) return null;
       const rect = block.getBoundingClientRect();
       if (!rect.height) return null;
-      const edgeRatio = block.classList.contains('touch-short-block') ? 0.30 : 0.22;
+      const edgeRatio = block.classList.contains('touch-short-block') ? 0.28 : 0.20;
       const rawEdgeZone = Math.min(SHORT_BLOCK_EDGE_ZONE_MAX, Math.max(SHORT_BLOCK_EDGE_ZONE_MIN, rect.height * edgeRatio));
       const edgeZone = Math.min(rawEdgeZone, Math.max(10, rect.height * 0.38));
       const localY = event.clientY - rect.top;
@@ -6460,9 +6477,10 @@
     };
 
     const armTouchDrag = (visualClass) => {
-      if (activePointerId == null || moved || touchTapMoved) return;
+      if (activePointerId == null || moved) return;
       touchDragArmed = true;
       startY = lastPointerClientY || touchTapStartY;
+      lockDragGesture();
       block.classList.add('calendar-touch-armed', visualClass);
       captureActiveTouchPointer();
       triggerHaptic('soft');
@@ -6575,6 +6593,7 @@
         }
         return;
       }
+      if (touchPointer && touchDragArmed) e.preventDefault();
       if (Math.abs(e.clientY - startY) > dragThreshold && !moved) {
         moved = true;
         snapshotDate(date);
@@ -6636,6 +6655,7 @@
       document.removeEventListener('pointercancel', onPointerUp);
       clearDragArmTimer();
       clearTouchEditArmTimer();
+      unlockDragGesture();
       clearDragVisualState();
       hideTimeIndicator(indicator);
       restoreBlockTimePreview();
@@ -6646,6 +6666,7 @@
         activePointerId = null;
         dragType = null;
         touchDragArmed = false;
+        touchTapMoved = false;
         dragSnapHaptic.value = null;
         return;
       }
@@ -6674,6 +6695,7 @@
       activePointerId = null;
       dragType = null;
       touchDragArmed = false;
+      touchTapMoved = false;
       dragSnapHaptic.value = null;
     };
 
@@ -7336,15 +7358,27 @@
   function registerServiceWorkerForUpdates() {
     if (!('serviceWorker' in navigator)) return;
     let refreshing = false;
+    let swRegistration = null;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (refreshing) return;
       refreshing = true;
       window.location.reload();
     });
 
+    const checkForAppUpdate = () => {
+      if (!swRegistration) return;
+      swRegistration.update().catch(error => {
+        console.warn('Service worker update check failed', error);
+      });
+      if (swRegistration.waiting && navigator.serviceWorker.controller) {
+        showAppUpdateToast(swRegistration);
+      }
+    };
+
     window.addEventListener('load', async () => {
       try {
-        const registration = await navigator.serviceWorker.register('sw.js');
+        const registration = await navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' });
+        swRegistration = registration;
         if (registration.waiting && navigator.serviceWorker.controller) {
           showAppUpdateToast(registration);
         }
@@ -7357,11 +7391,15 @@
             }
           });
         });
-        window.setTimeout(() => registration.update(), 1200);
+        window.setTimeout(checkForAppUpdate, 1200);
       } catch (error) {
         console.warn('Service worker registration failed', error);
       }
     });
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') checkForAppUpdate();
+    });
+    window.addEventListener('focus', checkForAppUpdate);
   }
 
   load();
