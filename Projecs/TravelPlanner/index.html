@@ -624,14 +624,6 @@
       -webkit-backdrop-filter: blur(25px); border-radius: 18px;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.02); position: relative;
     }
-    .night-mask {
-      position: absolute; top: 0; left: 40px; right: 0;
-      height: 25%;
-      background: rgba(15,23,42,0.055);
-      pointer-events: none; z-index: 0;
-      border-radius: 0 0 14px 14px;
-      box-shadow: inset 0 -1px 0 rgba(148,163,184,0.16);
-    }
     .timeline {
       position: relative;
       height: var(--timeline-height);
@@ -647,18 +639,14 @@
 
     @media (pointer: coarse), (max-width: 640px) {
       .timeline-container {
-        --timeline-height: clamp(1320px, 210dvh, 1780px);
+        --timeline-height: clamp(1040px, 165dvh, 1360px);
         border-radius: 16px;
-      }
-      .night-mask {
-        left: 36px;
-        right: 0;
       }
     }
 
     @media ((pointer: coarse) and (max-height: 760px)), ((max-width: 640px) and (max-height: 760px)) {
       .timeline-container {
-        --timeline-height: clamp(1200px, 195dvh, 1600px);
+        --timeline-height: clamp(960px, 150dvh, 1240px);
       }
     }
     .hour-marker {
@@ -977,6 +965,9 @@
       box-shadow: 0 16px 30px rgba(15,23,42,0.20), 0 0 0 2px rgba(255,255,255,0.34);
     }
     @media (pointer: coarse) {
+      .timeline .time-indicator {
+        display: none !important;
+      }
       .activity-block .drag-handle {
         height: 28px;
         pointer-events: none;
@@ -1038,22 +1029,22 @@
       content: attr(data-start-time);
       position: absolute;
       right: 8px;
-      min-width: 48px;
-      height: 21px;
-      padding: 0 9px;
+      min-width: auto;
+      height: 18px;
+      padding: 0 4px;
       display: inline-flex;
       align-items: center;
       justify-content: center;
-      border-radius: 999px;
-      background: rgba(0,122,255,0.86);
-      border: 1px solid rgba(255,255,255,0.36);
-      backdrop-filter: blur(14px) saturate(1.2);
-      -webkit-backdrop-filter: blur(14px) saturate(1.2);
-      color: #fff;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      backdrop-filter: none;
+      -webkit-backdrop-filter: none;
+      color: #075985;
       font-size: 11px;
       font-weight: 700;
       letter-spacing: 0;
-      box-shadow: 0 5px 14px rgba(10,132,255,0.24), 0 1px 2px rgba(15,23,42,0.12);
+      box-shadow: none;
       text-shadow: none;
     }
     .create-preview::before {
@@ -1067,13 +1058,20 @@
     }
     .create-preview.google-create-preview {
       border-left: 4px solid rgba(10,132,255,0.88);
-      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.36), 0 14px 26px rgba(10,132,255,0.18);
+      box-shadow: 0 12px 24px rgba(10,132,255,0.14);
     }
 
     .time-indicator {
       position: absolute; left: 0; right: 0; height: 24px;
       display: none; align-items: center; z-index: 99; pointer-events: none;
       transform: translateY(-50%);
+    }
+    .timeline:has(.activity-block.dragging) .time-indicator,
+    .timeline:has(.activity-block.drag-armed) .time-indicator,
+    .timeline:has(.activity-block.calendar-touch-armed) .time-indicator,
+    .timeline:has(.activity-block.resizing-top) .time-indicator,
+    .timeline:has(.activity-block.resizing-bottom) .time-indicator {
+      display: none !important;
     }
     .time-indicator::before {
       content: '';
@@ -1253,6 +1251,30 @@
       width: 34px; height: 34px; border-radius: 17px;
       display: inline-flex; align-items: center; justify-content: center;
       background: rgba(15,23,42,0.06); color: #64748B; font-size: 15px; font-weight: 700;
+    }
+    @media (max-width: 640px), (pointer: coarse) {
+      .range-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+      }
+      .range-arrow {
+        display: inline-flex;
+        justify-self: center;
+        width: 32px;
+        height: 24px;
+        border-radius: 12px;
+        font-size: 0;
+      }
+      .range-arrow::before {
+        content: '↓';
+        font-size: 15px;
+        line-height: 1;
+      }
+      .date-input-shell input[type="date"].modern-input {
+        min-height: 52px;
+        padding-left: 16px;
+        padding-right: 52px;
+      }
     }
     .quick-chip-row {
       display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px;
@@ -2170,6 +2192,8 @@
       createdPlan: '已创建计划',
       importedPlans: '已导入计划',
       exportedPlans: '已导出 JSON',
+      updateAvailable: '发现新版本',
+      updateReady: '点击刷新即可更新，已保存的旅行计划会保留',
       removed: (label) => `已移除 ${label}`,
       undoWindow: '4 秒内可撤销'
     },
@@ -3707,8 +3731,8 @@
       onComplete = null
     } = options;
     stopHorizontalInertia(scrollWrap, frameKey);
-    let currentVelocity = velocity * 1.35;
-    if (Math.abs(currentVelocity) < 0.035) {
+    let currentVelocity = velocity * 0.72;
+    if (Math.abs(currentVelocity) < 0.03) {
       if (updateState) updateState(scrollWrap);
       if (onComplete) onComplete(scrollWrap);
       return;
@@ -3725,8 +3749,8 @@
       }
       scrollWrap.scrollLeft = nextScrollLeft;
       if (updateState) updateState(scrollWrap);
-      currentVelocity *= Math.pow(0.955, dt / 16.67);
-      if (Math.abs(currentVelocity) < 0.012 || scrollWrap.scrollLeft <= 0 || scrollWrap.scrollLeft >= maxScrollLeft) {
+      currentVelocity *= Math.pow(0.935, dt / 16.67);
+      if (Math.abs(currentVelocity) < 0.014 || scrollWrap.scrollLeft <= 0 || scrollWrap.scrollLeft >= maxScrollLeft) {
         scrollWrap[frameKey] = null;
         if (updateState) updateState(scrollWrap);
         if (onComplete) onComplete(scrollWrap);
@@ -3819,7 +3843,7 @@
       const now = performance.now();
       const dt = Math.max(1, now - lastTime);
       const instantVelocity = (e.clientX - lastX) / dt;
-      velocity = moved ? (velocity * 0.45) + (instantVelocity * 0.55) : instantVelocity;
+      velocity = moved ? (velocity * 0.62) + (instantVelocity * 0.38) : instantVelocity;
       lastX = e.clientX; lastTime = now;
     };
     strip.onpointerup = stopDrag;
@@ -4102,11 +4126,31 @@
     });
 
     let endpointDragState = null;
+    const ENDPOINT_TOUCH_LONG_PRESS_MS = 340;
+    const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen';
+    const clearEndpointArmTimer = () => {
+      if (!endpointDragState?.armTimer) return;
+      clearTimeout(endpointDragState.armTimer);
+      endpointDragState.armTimer = null;
+    };
+    const armEndpointDrag = () => {
+      if (!endpointDragState || endpointDragState.armed) return;
+      endpointDragState.armed = true;
+      endpointDragState.startX = endpointDragState.lastClientX;
+      endpointDragState.endpoint.classList.add('dragging');
+      try {
+        endpointDragState.endpoint.setPointerCapture(endpointDragState.pointerId);
+      } catch {
+        // SVG pointer capture can fail on older mobile browsers.
+      }
+      triggerHaptic('soft');
+    };
     const stopEndpointDrag = (commit = true) => {
       if (!endpointDragState) return;
       document.removeEventListener('pointermove', onEndpointDragMove);
       document.removeEventListener('pointerup', onEndpointDragUp);
       document.removeEventListener('pointercancel', onEndpointDragUp);
+      clearEndpointArmTimer();
       endpointDragState.endpoint.classList.remove('dragging');
       hideRouteTimelineTooltip(routePanel);
       if (endpointDragState.moved) routePanel.dataset.suppressClickUntil = String(Date.now() + 220);
@@ -4130,6 +4174,15 @@
 
     const onEndpointDragMove = (e) => {
       if (!endpointDragState || endpointDragState.pointerId !== e.pointerId) return;
+      endpointDragState.lastClientX = e.clientX;
+      endpointDragState.lastClientY = e.clientY;
+      if (endpointDragState.touchPointer && !endpointDragState.armed) {
+        if (Math.hypot(e.clientX - endpointDragState.touchStartX, e.clientY - endpointDragState.touchStartY) > 9) {
+          stopEndpointDrag(false);
+        }
+        return;
+      }
+      if (endpointDragState.armed) e.preventDefault();
       const rawMin = getRouteTimelineMinutesFromClientX(endpointDragState.svg, e.clientX);
       const nextMin = getSoftSnappedTimelineMinutes(rawMin);
       if (!endpointDragState.moved && Math.abs(e.clientX - endpointDragState.startX) > 4) {
@@ -4137,7 +4190,6 @@
         endpointDragState.endpoint.classList.add('dragging');
       }
       if (!endpointDragState.moved) return;
-      e.preventDefault();
       if (endpointDragState.endpointType === 'start') {
         endpointDragState.currentStartMin = Math.min(nextMin, endpointDragState.origEndMin - 15);
       } else {
@@ -4159,6 +4211,7 @@
     const beginRouteTimelineEndpointDrag = (e, endpoint) => {
       if (e.button > 0 || !endpoint) return;
       e.stopPropagation();
+      const touchPointer = isTouchPointer(e);
       const segment = endpoint.closest('.route-timeline-segment');
       const activityIndex = Number(segment?.dataset.activityIndex);
       const plan = getPlan(currentPlanId);
@@ -4174,12 +4227,28 @@
         svg,
         activityIndex,
         startX: e.clientX,
+        touchStartX: e.clientX,
+        touchStartY: e.clientY,
+        lastClientX: e.clientX,
+        lastClientY: e.clientY,
+        touchPointer,
+        armed: !touchPointer,
+        armTimer: null,
         moved: false,
         origStartMin: timeToMin(activity.startTime),
         origEndMin: timeToMin(activity.endTime),
         currentStartMin: timeToMin(activity.startTime),
         currentEndMin: timeToMin(activity.endTime)
       };
+      if (touchPointer) {
+        endpointDragState.armTimer = window.setTimeout(armEndpointDrag, ENDPOINT_TOUCH_LONG_PRESS_MS);
+      } else {
+        try {
+          endpoint.setPointerCapture(e.pointerId);
+        } catch {
+          // SVG pointer capture can fail on some browsers.
+        }
+      }
       document.addEventListener('pointermove', onEndpointDragMove);
       document.addEventListener('pointerup', onEndpointDragUp);
       document.addEventListener('pointercancel', onEndpointDragUp);
@@ -4470,7 +4539,8 @@
     const paddedStart = Math.max(0, minTime - 16);
     const paddedEnd = Math.min(24 * 60, Math.max(maxTime + 16, paddedStart + 60));
     const timeRange = Math.max(60, paddedEnd - paddedStart);
-    const width = Math.max(mobileRoute ? 340 : 460, Math.round((timeRange / 60) * (mobileRoute ? 34 : 48)) + leftPad + rightPad);
+    const mobileBaseWidth = Math.min(300, 240 + Math.max(0, locations.length - 2) * 24);
+    const width = Math.max(mobileRoute ? mobileBaseWidth : 460, Math.round((timeRange / 60) * (mobileRoute ? 22 : 48)) + leftPad + rightPad);
     const usableWidth = width - leftPad - rightPad;
     const height = topPad + Math.max(1, locations.length - 1) * rowGap + bottomPad + 10;
     const yForLocation = location => {
@@ -4481,7 +4551,7 @@
     const xForMinute = minute => leftPad + (usableWidth * (minute - paddedStart)) / timeRange;
     const positioned = segments.map(segment => {
       const x1 = xForMinute(segment.startMin);
-      const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 11 : 16));
+      const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 8 : 16));
       const y1 = yForLocation(segment.startLocation);
       const y2 = yForLocation(segment.endLocation);
       const labelY = Math.min(height - (mobileRoute ? 8 : 10), Math.max(y1, y2) + (mobileRoute ? 11 : 15));
@@ -4557,9 +4627,10 @@
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
     const mobileRoute = !compact && isMobileRouteViewport();
-    const width = compact ? 256 : (mobileRoute ? 320 : Math.max(460, dayRoutes.length * 152));
+    const mobilePlanWidth = Math.min(300, 220 + dayRoutes.length * 28);
+    const width = compact ? 256 : (mobileRoute ? mobilePlanWidth : Math.max(460, dayRoutes.length * 152));
     const height = compact ? 70 : (mobileRoute ? 76 : 112);
-    const paddingX = compact ? 20 : (mobileRoute ? 16 : 28);
+    const paddingX = compact ? 20 : (mobileRoute ? 42 : 28);
     const usableWidth = width - paddingX * 2;
     const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 4, -4, 5, -3] : [0, 8, -6, 10, -5]);
     const pointCount = dayRoutes.length + 1;
@@ -5144,9 +5215,6 @@
 
     const timelineWrap = document.createElement('div');
     timelineWrap.className = 'timeline-container';
-    const nightMask = document.createElement('div');
-    nightMask.className = 'night-mask';
-    timelineWrap.appendChild(nightMask);
     const timeline = document.createElement('div');
     timeline.className = 'timeline';
     timeline.id = `timeline-${date}`;
@@ -6100,8 +6168,8 @@
   function startDaySliderInertia(slider, initialVelocity) {
     stopHorizontalInertia(slider, '_daySliderInertiaFrame');
     const maxScrollLeft = Math.max(0, slider.scrollWidth - slider.clientWidth);
-    let velocity = initialVelocity * 1.35;
-    if (Math.abs(velocity) < 0.035) {
+    let velocity = initialVelocity * 0.72;
+    if (Math.abs(velocity) < 0.03) {
       updateDaySliderMask(slider);
       return;
     }
@@ -6117,8 +6185,8 @@
       }
       slider.scrollLeft = nextScrollLeft;
       updateDaySliderMask(slider);
-      velocity *= Math.pow(0.955, dt / 16.67);
-      if (Math.abs(velocity) < 0.012 || slider.scrollLeft <= 0 || slider.scrollLeft >= maxScrollLeft) {
+      velocity *= Math.pow(0.935, dt / 16.67);
+      if (Math.abs(velocity) < 0.014 || slider.scrollLeft <= 0 || slider.scrollLeft >= maxScrollLeft) {
         slider._daySliderInertiaFrame = null;
         slider.classList.remove('momentum-slider');
         updateDaySliderMask(slider);
@@ -6340,6 +6408,7 @@
     let touchTapStartX = 0;
     let touchTapStartY = 0;
     let touchTapMoved = false;
+    let lastPointerClientY = 0;
     const dragSnapHaptic = { value: null };
     const timeline = document.getElementById(`timeline-${date}`);
     const indicator = document.getElementById(`indicator-${date}`);
@@ -6381,12 +6450,22 @@
       if (!isTouchPointer(event)) return null;
       const rect = block.getBoundingClientRect();
       if (!rect.height) return null;
-      const edgeRatio = block.classList.contains('touch-short-block') ? 0.34 : 0.22;
-      const edgeZone = Math.min(SHORT_BLOCK_EDGE_ZONE_MAX, Math.max(SHORT_BLOCK_EDGE_ZONE_MIN, rect.height * edgeRatio));
+      const edgeRatio = block.classList.contains('touch-short-block') ? 0.30 : 0.22;
+      const rawEdgeZone = Math.min(SHORT_BLOCK_EDGE_ZONE_MAX, Math.max(SHORT_BLOCK_EDGE_ZONE_MIN, rect.height * edgeRatio));
+      const edgeZone = Math.min(rawEdgeZone, Math.max(10, rect.height * 0.38));
       const localY = event.clientY - rect.top;
       if (localY <= edgeZone) return 'top';
       if (localY >= rect.height - edgeZone) return 'bottom';
       return null;
+    };
+
+    const armTouchDrag = (visualClass) => {
+      if (activePointerId == null || moved || touchTapMoved) return;
+      touchDragArmed = true;
+      startY = lastPointerClientY || touchTapStartY;
+      block.classList.add('calendar-touch-armed', visualClass);
+      captureActiveTouchPointer();
+      triggerHaptic('soft');
     };
 
     const applyPreDragVisualState = (event) => {
@@ -6396,11 +6475,7 @@
       if (dragType === 'move') {
         if (isTouchPointer(event)) {
           touchEditArmTimer = window.setTimeout(() => {
-            if (activePointerId == null || moved || touchTapMoved) return;
-            touchDragArmed = true;
-            block.classList.add('calendar-touch-armed', 'drag-armed');
-            captureActiveTouchPointer();
-            triggerHaptic('soft');
+            armTouchDrag('drag-armed');
           }, TOUCH_EDIT_ARM_DELAY_MS);
         } else {
           block.classList.add('drag-pressing');
@@ -6409,11 +6484,7 @@
       } else if (dragType === 'top') {
         if (isTouchPointer(event)) {
           touchEditArmTimer = window.setTimeout(() => {
-            if (activePointerId == null || moved || touchTapMoved) return;
-            touchDragArmed = true;
-            block.classList.add('calendar-touch-armed', 'edge-hint-top');
-            captureActiveTouchPointer();
-            triggerHaptic('soft');
+            armTouchDrag('edge-hint-top');
           }, TOUCH_EDIT_ARM_DELAY_MS);
         } else {
           block.classList.add('edge-hint-top');
@@ -6421,11 +6492,7 @@
       } else if (dragType === 'bottom') {
         if (isTouchPointer(event)) {
           touchEditArmTimer = window.setTimeout(() => {
-            if (activePointerId == null || moved || touchTapMoved) return;
-            touchDragArmed = true;
-            block.classList.add('calendar-touch-armed', 'edge-hint-bottom');
-            captureActiveTouchPointer();
-            triggerHaptic('soft');
+            armTouchDrag('edge-hint-bottom');
           }, TOUCH_EDIT_ARM_DELAY_MS);
         } else {
           block.classList.add('edge-hint-bottom');
@@ -6476,6 +6543,7 @@
       startY = e.clientY;
       touchTapStartX = e.clientX;
       touchTapStartY = e.clientY;
+      lastPointerClientY = e.clientY;
       touchTapMoved = false;
       touchDragArmed = false;
       moved = false;
@@ -6493,6 +6561,7 @@
 
     const onPointerMove = (e) => {
       if (activePointerId !== e.pointerId) return;
+      lastPointerClientY = e.clientY;
       const touchPointer = isTouchPointer(e);
       const tapDx = Math.abs(e.clientX - touchTapStartX);
       const tapDy = Math.abs(e.clientY - touchTapStartY);
@@ -7250,11 +7319,54 @@
   function addHour(t) { let [h,m]=t.split(':').map(Number); h=(h+1)%24; return `${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`; }
   function escapeHtml(s) { return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[m]); }
 
+  function showAppUpdateToast(registration) {
+    if (!registration?.waiting) return;
+    showManagedToast({
+      title: uiText.toast.updateAvailable,
+      subtitle: uiText.toast.updateReady,
+      actionLabel: '刷新',
+      actionHandler: () => {
+        save();
+        hideManagedToast();
+        registration.waiting.postMessage({ type: 'SKIP_WAITING' });
+      }
+    });
+  }
+
+  function registerServiceWorkerForUpdates() {
+    if (!('serviceWorker' in navigator)) return;
+    let refreshing = false;
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    window.addEventListener('load', async () => {
+      try {
+        const registration = await navigator.serviceWorker.register('sw.js');
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          showAppUpdateToast(registration);
+        }
+        registration.addEventListener('updatefound', () => {
+          const worker = registration.installing;
+          if (!worker) return;
+          worker.addEventListener('statechange', () => {
+            if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+              showAppUpdateToast(registration);
+            }
+          });
+        });
+        window.setTimeout(() => registration.update(), 1200);
+      } catch (error) {
+        console.warn('Service worker registration failed', error);
+      }
+    });
+  }
+
   load();
   renderMain();
-  if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => navigator.serviceWorker.register('sw.js'));
-  }
+  registerServiceWorkerForUpdates();
 </script>
 </body>
 </html>
