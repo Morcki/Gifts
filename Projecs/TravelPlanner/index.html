@@ -1028,7 +1028,7 @@
     .create-preview::after {
       content: attr(data-start-time);
       position: absolute;
-      right: 8px;
+      left: -34px;
       min-width: auto;
       height: 18px;
       padding: 0 4px;
@@ -1049,12 +1049,12 @@
     }
     .create-preview::before {
       top: 0;
-      transform: translateY(-50%);
+      transform: translate(-100%, -50%);
     }
     .create-preview::after {
       content: attr(data-end-time);
       bottom: 0;
-      transform: translateY(50%);
+      transform: translate(-100%, 50%);
     }
     .create-preview.google-create-preview {
       border-left: 4px solid rgba(10,132,255,0.88);
@@ -2525,7 +2525,29 @@
     return clampTime(Math.round(((clampedOffset - paddingTop) / usableHeight) * 24 * 60));
   }
 
+  function getTimelineVisualMinuteScale(timeline) {
+    const markers = Array.from(timeline.querySelectorAll('.hour-marker'));
+    if (markers.length >= 2) {
+      const firstRect = markers[0].getBoundingClientRect();
+      const lastRect = markers[markers.length - 1].getBoundingClientRect();
+      const firstCenterY = firstRect.top + firstRect.height / 2;
+      const lastCenterY = lastRect.top + lastRect.height / 2;
+      const minutes = (markers.length - 1) * 60;
+      const pxPerMin = (lastCenterY - firstCenterY) / minutes;
+      if (Number.isFinite(pxPerMin) && pxPerMin > 0) return pxPerMin;
+    }
+    const { usableHeight } = getTimelineMetrics(timeline);
+    return usableHeight / (24 * 60);
+  }
+
   function timelineClientYToMinutes(timeline, clientY) {
+    const markers = Array.from(timeline.querySelectorAll('.hour-marker'));
+    if (markers.length >= 2) {
+      const firstRect = markers[0].getBoundingClientRect();
+      const firstCenterY = firstRect.top + firstRect.height / 2;
+      const pxPerMin = getTimelineVisualMinuteScale(timeline);
+      return clampTime(Math.round((clientY - firstCenterY) / pxPerMin));
+    }
     const rect = timeline.getBoundingClientRect();
     return timelineOffsetToMinutes(timeline, clientY - rect.top + timeline.scrollTop);
   }
@@ -6611,8 +6633,7 @@
       }
       if (!moved) return;
       e.preventDefault();
-      const { usableHeight } = getTimelineMetrics(timeline);
-      const pxPerMin = usableHeight / (24 * 60);
+      const pxPerMin = getTimelineVisualMinuteScale(timeline);
       const deltaMin = (e.clientY - startY) / pxPerMin;
       const startMin = timeToMin(origStart);
       const endMin = timeToMin(origEnd);
