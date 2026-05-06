@@ -381,10 +381,30 @@
       }
       .range-grid { grid-template-columns: 1fr; }
       .range-arrow { display: none; }
+      .date-input-shell input[type="date"].modern-input {
+        min-height: 52px;
+        padding-left: 16px;
+        padding-right: 52px;
+      }
       .import-mode-grid { grid-template-columns: 1fr; }
       .selection-toolbar {
         width: calc(100vw - 24px);
         border-radius: 24px;
+      }
+    }
+
+    @media (pointer: coarse) and (max-width: 900px) {
+      .range-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+      .range-arrow {
+        display: none;
+      }
+      .date-input-shell input[type="date"].modern-input {
+        min-height: 52px;
+        padding-left: 16px;
+        padding-right: 52px;
       }
     }
 
@@ -433,12 +453,13 @@
       gap: 8px;
       overflow-x: auto;
       -webkit-overflow-scrolling: touch;
-      scroll-behavior: smooth;
+      scroll-behavior: auto;
       padding: 8px 0;
       scrollbar-width: none;
       -ms-overflow-style: none;
       cursor: grab;
-      touch-action: pan-y;
+      touch-action: pan-x pan-y;
+      overscroll-behavior-x: contain;
     }
     .day-slider.dragging-slider {
       cursor: grabbing;
@@ -460,6 +481,13 @@
       transition: all 0.2s;
       white-space: nowrap;
       color: #000;
+    }
+    .day-toggle-short,
+    .day-toggle-weekday {
+      display: none;
+    }
+    .day-toggle-full {
+      display: inline;
     }
     .day-toggle:active { background: rgba(209,209,214,0.8); transform: scale(0.97); }
     .day-toggle.edited {
@@ -485,7 +513,16 @@
     .day-content > div { overflow: hidden; }
     .day-content-inner { padding: 12px 16px 16px; }
 
-    .editor-toolbar { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; }
+    .editor-toolbar { display: flex; gap: 8px; margin-bottom: 8px; align-items: center; justify-content: space-between; }
+    .editor-day-title {
+      min-width: 0;
+      color: #111827;
+      font-size: 15px;
+      font-weight: 650;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .undo-btn {
       background: none; border: none; color: var(--blue); font-size: 14px;
       font-weight: 500; padding: 4px 12px; border-radius: 14px;
@@ -510,6 +547,74 @@
     }
     .tag-chip.fixed .tag-del { display: none; }
 
+    @media (pointer: coarse), (max-width: 640px) {
+      .day-slider {
+        gap: 7px;
+        padding: 7px 0 9px;
+      }
+      .day-toggle {
+        min-width: 64px;
+        padding: 8px 11px;
+        border-radius: 15px;
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 2px;
+        line-height: 1.05;
+      }
+      .day-toggle-full {
+        display: none;
+      }
+      .day-toggle-short,
+      .day-toggle-weekday {
+        display: block;
+      }
+      .day-toggle-short {
+        font-size: 14px;
+        font-weight: 700;
+      }
+      .day-toggle-weekday {
+        font-size: 11px;
+        font-weight: 590;
+        color: rgba(17,24,39,0.58);
+      }
+      .day-toggle.active-day .day-toggle-weekday {
+        color: rgba(255,255,255,0.78);
+      }
+      .tag-bar {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        margin: 6px -16px 10px;
+        padding: 2px 16px 8px;
+        touch-action: pan-x;
+        overscroll-behavior-x: contain;
+      }
+      .tag-bar::-webkit-scrollbar {
+        display: none;
+      }
+      .tag-chip,
+      .tag-bar > .btn {
+        flex: 0 0 auto;
+        min-height: 34px;
+        white-space: nowrap;
+      }
+      .tag-chip {
+        padding: 6px 12px;
+        font-size: 13px;
+      }
+      .editor-day-title {
+        font-size: 14px;
+      }
+      .tag-del {
+        flex: 0 0 20px;
+      }
+    }
+
     .timeline-container {
       --timeline-height: clamp(560px, calc(100dvh - 270px), 820px);
       background: rgba(255,255,255,0.55); backdrop-filter: blur(25px);
@@ -517,10 +622,12 @@
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.02); position: relative;
     }
     .night-mask {
-      position: absolute; top: 0; left: 40px; right: 8px;
+      position: absolute; top: 0; left: 40px; right: 0;
       height: 25%;
-      background: rgba(0,0,20,0.04); pointer-events: none; z-index: 0;
-      border-radius: 0 0 10px 10px;
+      background: rgba(15,23,42,0.055);
+      pointer-events: none; z-index: 0;
+      border-radius: 0 0 14px 14px;
+      box-shadow: inset 0 -1px 0 rgba(148,163,184,0.16);
     }
     .timeline {
       position: relative;
@@ -533,13 +640,18 @@
 
     @media (pointer: coarse), (max-width: 640px) {
       .timeline-container {
-        --timeline-height: clamp(640px, calc(100dvh - 176px), 920px);
+        --timeline-height: clamp(960px, 150dvh, 1320px);
+        border-radius: 16px;
+      }
+      .night-mask {
+        left: 36px;
+        right: 0;
       }
     }
 
     @media ((pointer: coarse) and (max-height: 760px)), ((max-width: 640px) and (max-height: 760px)) {
       .timeline-container {
-        --timeline-height: clamp(580px, calc(100dvh - 156px), 780px);
+        --timeline-height: clamp(900px, 142dvh, 1180px);
       }
     }
     .hour-marker {
@@ -557,11 +669,16 @@
     }
     @media (max-width: 640px) {
       .hour-line {
-        height: 1.5px;
-        background: rgba(71,85,105,0.16);
+        height: 1px;
+        background: linear-gradient(90deg, rgba(71,85,105,0.18), rgba(71,85,105,0.07));
+        margin-left: 30px;
+        margin-right: 6px;
       }
       .hour-label {
         color: #64748B;
+        width: 26px;
+        font-size: 9.5px;
+        padding-right: 5px;
       }
     }
     .activity-block {
@@ -738,6 +855,12 @@
       filter: saturate(1.08) brightness(1.03);
       cursor: grabbing;
     }
+    .activity-block.calendar-touch-armed {
+      box-shadow: 0 16px 30px rgba(15,23,42,0.22), 0 0 0 2px rgba(255,255,255,0.4);
+      transform: scale(1.012);
+      filter: saturate(1.06) brightness(1.02);
+      z-index: 80 !important;
+    }
     .activity-block.dragging .activity-content {
       transform: translateY(-0.5px);
       padding-right: 94px;
@@ -846,9 +969,44 @@
     .activity-block.resizing-bottom {
       box-shadow: 0 16px 30px rgba(15,23,42,0.20), 0 0 0 2px rgba(255,255,255,0.34);
     }
+    .activity-edit-time {
+      position: absolute;
+      right: 8px;
+      min-width: 48px;
+      height: 21px;
+      padding: 0 9px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      background: rgba(0,122,255,0.88);
+      border: 1px solid rgba(255,255,255,0.36);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+      box-shadow: 0 5px 14px rgba(10,132,255,0.24), 0 1px 2px rgba(15,23,42,0.12);
+      pointer-events: none;
+      z-index: 5;
+    }
+    .activity-edit-time.start {
+      top: 0;
+      transform: translateY(-50%);
+    }
+    .activity-edit-time.end {
+      bottom: 0;
+      transform: translateY(50%);
+    }
+    .activity-block.dragging .activity-edit-time,
+    .activity-block.calendar-touch-armed .activity-edit-time {
+      display: inline-flex;
+    }
     @media (pointer: coarse) {
       .activity-block .drag-handle {
         height: 28px;
+        pointer-events: none;
       }
       .drag-top {
         top: -14px;
@@ -857,15 +1015,15 @@
         bottom: -14px;
       }
       .activity-block .drag-body {
-        left: auto;
-        right: -6px;
-        width: 38px;
+        left: 0;
+        right: 0;
+        width: auto;
         top: 10px;
         bottom: 10px;
         border-radius: 14px;
       }
       .drag-body::after {
-        opacity: 0.72;
+        opacity: 0;
       }
       .activity-block.touch-short-block .drag-handle {
         height: 40px;
@@ -877,8 +1035,9 @@
         bottom: -20px;
       }
       .activity-block.touch-short-block .drag-body {
-        right: -8px;
-        width: 42px;
+        left: 0;
+        right: 0;
+        width: auto;
         top: 4px;
         bottom: 4px;
       }
@@ -896,64 +1055,46 @@
       background: linear-gradient(180deg, rgba(10,132,255,0.28), rgba(10,132,255,0.18)); backdrop-filter: blur(8px);
       border: 2px solid rgba(0,122,255,0.48); border-radius: 14px;
       z-index: 5; pointer-events: none; display: none;
-      align-items: center; justify-content: center;
+      align-items: stretch; justify-content: stretch;
       color: var(--blue); font-size: 12px; font-weight: 600;
-      text-shadow: 0 1px 2px rgba(255,255,255,0.8);
       will-change: top, height;
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.32), 0 10px 20px rgba(10,132,255,0.16);
     }
-    .create-preview-inner {
-      display: inline-flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      padding: 8px 12px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.78);
-      color: #075985;
-      box-shadow: 0 8px 18px rgba(15,23,42,0.10);
-    }
-    .create-preview-range {
-      font-size: 12px;
-      font-weight: 700;
-      letter-spacing: -0.01em;
-    }
-    .create-preview-duration {
-      padding: 2px 8px;
-      border-radius: 999px;
-      background: rgba(10,132,255,0.12);
-      color: #0C4A6E;
-      font-size: 10px;
-      font-weight: 700;
-    }
     .create-preview::before,
     .create-preview::after {
-      content: '';
+      content: attr(data-start-time);
       position: absolute;
-      left: 50%;
-      width: 52px;
-      height: 7px;
-      transform: translateX(-50%);
+      right: 8px;
+      min-width: 48px;
+      height: 21px;
+      padding: 0 9px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
       border-radius: 999px;
-      background: rgba(255,255,255,0.98);
-      box-shadow: 0 3px 10px rgba(15,23,42,0.18);
+      background: rgba(0,122,255,0.86);
+      border: 1px solid rgba(255,255,255,0.36);
+      backdrop-filter: blur(14px) saturate(1.2);
+      -webkit-backdrop-filter: blur(14px) saturate(1.2);
+      color: #fff;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0;
+      box-shadow: 0 5px 14px rgba(10,132,255,0.24), 0 1px 2px rgba(15,23,42,0.12);
+      text-shadow: none;
     }
     .create-preview::before {
-      top: -4px;
+      top: 0;
+      transform: translateY(-50%);
     }
     .create-preview::after {
-      bottom: -4px;
+      content: attr(data-end-time);
+      bottom: 0;
+      transform: translateY(50%);
     }
     .create-preview.google-create-preview {
       border-left: 4px solid rgba(10,132,255,0.88);
       box-shadow: inset 0 0 0 1px rgba(255,255,255,0.36), 0 14px 26px rgba(10,132,255,0.18);
-    }
-    .create-preview.google-create-preview .create-preview-inner {
-      width: min(100%, 168px);
-      padding-top: 10px;
-      padding-bottom: 10px;
-      border-radius: 16px;
-      background: rgba(255,255,255,0.84);
     }
 
     .time-indicator {
@@ -1124,6 +1265,16 @@
     .range-grid {
       display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
       gap: 8px; align-items: center;
+    }
+    .date-input-shell {
+      min-width: 0;
+      position: relative;
+    }
+    .date-input-shell input[type="date"].modern-input {
+      min-height: 50px;
+      padding-right: 46px;
+      line-height: 1.2;
+      white-space: nowrap;
     }
     .range-arrow {
       width: 34px; height: 34px; border-radius: 17px;
@@ -1526,6 +1677,51 @@
     .route-plan-scroll.dragging-strip { cursor: grabbing; }
     .route-svg.plan-svg { height: auto; max-width: none; aspect-ratio: unset; margin-bottom: 0; }
     .route-svg.compact { aspect-ratio: 280 / 58; margin-bottom: 8px; }
+    @media (pointer: coarse), (max-width: 640px) {
+      .route-panel {
+        padding: 10px 9px;
+        border-radius: 16px;
+        margin-bottom: 10px;
+      }
+      .route-panel-header {
+        gap: 8px;
+        margin-bottom: 8px;
+      }
+      .route-panel-title {
+        font-size: 14px;
+      }
+      .route-panel-summary {
+        font-size: 10.5px;
+        line-height: 1.35;
+      }
+      .route-svg {
+        border-radius: 12px;
+        margin-bottom: 7px;
+      }
+      .route-activity-scroll,
+      .route-timeline-scroll,
+      .route-plan-scroll {
+        margin-bottom: 7px;
+        padding-bottom: 3px;
+      }
+      .route-timeline-header {
+        margin-bottom: 2px;
+      }
+      .route-timeline-header-label,
+      .route-zoom-level {
+        font-size: 10px;
+      }
+      .route-zoom-btn {
+        width: 22px;
+        height: 22px;
+        font-size: 13px;
+      }
+      .route-layer-title {
+        margin-top: 8px;
+        margin-bottom: 6px;
+        font-size: 11px;
+      }
+    }
     .route-svg-segment,
     .route-svg-node {
       transition: opacity 180ms ease, transform 180ms ease, stroke-width 180ms ease, r 180ms ease;
@@ -2074,6 +2270,18 @@
     return new Intl.DateTimeFormat('zh-CN', { month: 'short', day: 'numeric', weekday: 'short' }).format(parsed);
   }
 
+  function getDayToggleLabel(dateString) {
+    const parsed = parseDateString(dateString);
+    if (!parsed) {
+      return { shortDate: dateString, weekday: '', fullDate: dateString };
+    }
+    return {
+      shortDate: `${parsed.getMonth() + 1}/${String(parsed.getDate()).padStart(2, '0')}`,
+      weekday: new Intl.DateTimeFormat('zh-CN', { weekday: 'short' }).format(parsed),
+      fullDate: dateString
+    };
+  }
+
   function getTripSummaryText(start, end) {
     const totalDays = getTripLengthDays(start, end);
     if (!totalDays) return '请选择有效的出发与结束日期';
@@ -2281,6 +2489,9 @@
   function timeToMin(t) { const [h,m]=t.split(':').map(Number); return h*60+m; }
   function minToTime(m) { return `${String(Math.floor(m/60)).padStart(2,'0')}:${String(m%60).padStart(2,'0')}`; }
   function clampTime(min) { return Math.max(0, Math.min(min, 24*60)); }
+  function isMobileRouteViewport() {
+    return window.matchMedia?.('(pointer: coarse), (max-width: 640px)').matches || window.innerWidth <= 640;
+  }
 
   function clampActivityRange(startMin, endMin) {
     const safeStart = clampTime(startMin);
@@ -2828,19 +3039,20 @@
   function renderDayTimelineSvg(dayData, date) {
     const timeline = buildDayTimelineSegments(dayData);
     if (!timeline.segments.length) return '';
+    const mobileRoute = isMobileRouteViewport();
     const ZOOM_STEPS = [1, 1.5, 2, 2.5, 3];
     const currentZoom = dayTimelineZoom.get(date) || 1;
     const zoomIdx = ZOOM_STEPS.findIndex(s => Math.abs(s - currentZoom) < 0.01);
     const safeZoomIdx = zoomIdx < 0 ? 0 : zoomIdx;
-    const svgWidth = Math.round(760 * currentZoom);
+    const svgWidth = Math.round((mobileRoute ? 560 : 760) * currentZoom);
     const zoomLabel = currentZoom === 1 ? '1×' : `${currentZoom}×`;
-    const width = 520;
-    const leftPad = 18;
-    const rightPad = 18;
-    const topPad = 36;
-    const laneGap = 34;
+    const width = mobileRoute ? 420 : 520;
+    const leftPad = mobileRoute ? 14 : 18;
+    const rightPad = mobileRoute ? 14 : 18;
+    const topPad = mobileRoute ? 26 : 36;
+    const laneGap = mobileRoute ? 24 : 34;
     const usableWidth = width - leftPad - rightPad;
-    const height = topPad + timeline.laneCount * laneGap + 14;
+    const height = topPad + timeline.laneCount * laneGap + (mobileRoute ? 8 : 14);
     const ticks = [0, 3, 6, 9, 12, 15, 18, 21, 24];
     const positioned = timeline.segments.map(segment => {
       const x1 = leftPad + (usableWidth * segment.startMin) / (24 * 60);
@@ -2891,20 +3103,20 @@
           </g>`).join('')}
         ${positioned.map(segment => `
           <g class="route-timeline-segment" data-activity-index="${segment.activityIndex}" data-center-x="${segment.midX}" tabindex="0" role="button" aria-label="查看 ${escapeHtml(segment.title)} 时间段">
-            <line class="route-timeline-line" x1="${segment.x1}" y1="${segment.y}" x2="${segment.x2}" y2="${segment.y}" stroke="${segment.color}" stroke-width="${segment.isTransport ? 5 : 4}" stroke-linecap="round" stroke-dasharray="${segment.dash}" opacity="${segment.isTransport ? 0.88 : 0.68}"></line>
+            <line class="route-timeline-line" x1="${segment.x1}" y1="${segment.y}" x2="${segment.x2}" y2="${segment.y}" stroke="${segment.color}" stroke-width="${mobileRoute ? (segment.isTransport ? 3.8 : 3.2) : (segment.isTransport ? 5 : 4)}" stroke-linecap="round" stroke-dasharray="${segment.dash}" opacity="${segment.isTransport ? 0.88 : 0.68}"></line>
             <circle class="route-timeline-endpoint-hit start" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="16"></circle>
             <circle class="route-timeline-endpoint-hit end" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="16"></circle>
-            <circle class="route-timeline-endpoint start${segment.connectsFromPrev ? ' continuous-start' : ''}" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="${segment.isTransport ? 4 : 3.5}" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
-            <circle class="route-timeline-endpoint end${segment.connectsToNext ? ' continuous-end' : ''}" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="${segment.isTransport ? 4 : 3.5}" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
+            <circle class="route-timeline-endpoint start${segment.connectsFromPrev ? ' continuous-start' : ''}" data-endpoint="start" cx="${segment.x1}" cy="${segment.y}" r="${mobileRoute ? (segment.isTransport ? 3.1 : 2.8) : (segment.isTransport ? 4 : 3.5)}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
+            <circle class="route-timeline-endpoint end${segment.connectsToNext ? ' continuous-end' : ''}" data-endpoint="end" cx="${segment.x2}" cy="${segment.y}" r="${mobileRoute ? (segment.isTransport ? 3.1 : 2.8) : (segment.isTransport ? 4 : 3.5)}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
             ${segment.connectsFromPrev ? `
               <g class="route-timeline-connector" transform="translate(${segment.x1}, ${segment.y})">
                 <circle class="route-timeline-connector-core" r="6.2" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
                 <circle r="2.4" fill="${segment.color}"></circle>
               </g>
               <circle class="route-timeline-connector-hit" cx="${segment.x1}" cy="${segment.y}" r="16"></circle>` : ''}
-            <g class="route-timeline-badge" transform="translate(${segment.midX}, ${segment.y + 16})">
-              <rect x="-18" y="-10" width="36" height="20" rx="10" fill="rgba(255,255,255,0.92)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="11" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
+            <g class="route-timeline-badge" transform="translate(${segment.midX}, ${segment.y + (mobileRoute ? 12 : 16)})">
+              <rect x="${mobileRoute ? -14 : -18}" y="${mobileRoute ? -8 : -10}" width="${mobileRoute ? 28 : 36}" height="${mobileRoute ? 16 : 20}" rx="${mobileRoute ? 8 : 10}" fill="rgba(255,255,255,0.92)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="${mobileRoute ? 9 : 11}" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
             </g>
             <g class="route-timeline-pin-badge" transform="translate(${segment.x2 + 12}, ${segment.y - 14})" opacity="0">
               <rect x="-14" y="-9" width="28" height="18" rx="9" fill="rgba(3,105,161,0.12)"></rect>
@@ -4268,17 +4480,18 @@
   function renderDayActivityRouteSvg(dayData) {
     const { segments, locations } = buildDayRouteActivitySegments(dayData);
     if (!segments.length || !locations.length) return '';
-    const leftPad = 44;
+    const mobileRoute = isMobileRouteViewport();
+    const leftPad = mobileRoute ? 34 : 44;
     const rightPad = 6;
-    const topPad = 24;
-    const bottomPad = 34;
-    const rowGap = locations.length <= 1 ? 0 : 24;
+    const topPad = mobileRoute ? 19 : 24;
+    const bottomPad = mobileRoute ? 25 : 34;
+    const rowGap = locations.length <= 1 ? 0 : (mobileRoute ? 17 : 24);
     const minTime = Math.min(...segments.map(segment => segment.startMin));
     const maxTime = Math.max(...segments.map(segment => segment.endMin));
     const paddedStart = Math.max(0, minTime - 16);
     const paddedEnd = Math.min(24 * 60, Math.max(maxTime + 16, paddedStart + 60));
     const timeRange = Math.max(60, paddedEnd - paddedStart);
-    const width = Math.max(460, Math.round((timeRange / 60) * 48) + leftPad + rightPad);
+    const width = Math.max(mobileRoute ? 340 : 460, Math.round((timeRange / 60) * (mobileRoute ? 34 : 48)) + leftPad + rightPad);
     const usableWidth = width - leftPad - rightPad;
     const height = topPad + Math.max(1, locations.length - 1) * rowGap + bottomPad + 10;
     const yForLocation = location => {
@@ -4289,10 +4502,10 @@
     const xForMinute = minute => leftPad + (usableWidth * (minute - paddedStart)) / timeRange;
     const positioned = segments.map(segment => {
       const x1 = xForMinute(segment.startMin);
-      const x2 = Math.max(xForMinute(segment.endMin), x1 + 16);
+      const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 11 : 16));
       const y1 = yForLocation(segment.startLocation);
       const y2 = yForLocation(segment.endLocation);
-      const labelY = Math.min(height - 10, Math.max(y1, y2) + 15);
+      const labelY = Math.min(height - (mobileRoute ? 8 : 10), Math.max(y1, y2) + (mobileRoute ? 11 : 15));
       return {
         ...segment,
         x1,
@@ -4336,24 +4549,24 @@
           return `
             <g>
               <line x1="${x}" y1="10" x2="${x}" y2="${height - 10}" stroke="rgba(148,163,184,0.14)" stroke-width="1"></line>
-              <text x="${x}" y="12" text-anchor="middle" font-size="10" fill="#94A3B8">${minToTime(minute)}</text>
+              <text x="${x}" y="${mobileRoute ? 10 : 12}" text-anchor="middle" font-size="${mobileRoute ? 8.5 : 10}" fill="#94A3B8">${minToTime(minute)}</text>
             </g>`;
         }).join('')}
         ${locations.map(location => {
           const y = yForLocation(location);
           return `
-            <text x="${leftPad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, 7))}</text>`;
+            <text x="${leftPad - 7}" y="${y + 3}" text-anchor="end" font-size="${mobileRoute ? 8.5 : 10}" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="${mobileRoute ? 2.4 : 3}" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, mobileRoute ? 5 : 7))}</text>`;
         }).join('')}
         ${connectors.map(connector => `
-          <path class="route-svg-connector" d="M ${connector.fromX} ${connector.fromY} L ${connector.toX} ${connector.toY}" fill="none" stroke="${connector.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${connector.dash}" opacity="${connector.opacity}"></path>`).join('')}
+          <path class="route-svg-connector" d="M ${connector.fromX} ${connector.fromY} L ${connector.toX} ${connector.toY}" fill="none" stroke="${connector.color}" stroke-width="${mobileRoute ? 2.1 : 3}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${connector.dash}" opacity="${connector.opacity}"></path>`).join('')}
         ${positioned.map(segment => `
           <g class="route-svg-activity" data-activity-index="${segment.activityIndex}">
-            <path class="route-svg-activity-segment" d="M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}" fill="none" stroke="${segment.color}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${segment.dash}" opacity="0.9"></path>
-            <circle cx="${segment.x1}" cy="${segment.y1}" r="3.9" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
-            <circle cx="${segment.x2}" cy="${segment.y2}" r="3.9" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
+            <path class="route-svg-activity-segment" d="M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}" fill="none" stroke="${segment.color}" stroke-width="${mobileRoute ? 4.1 : 6}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${segment.dash}" opacity="0.9"></path>
+            <circle cx="${segment.x1}" cy="${segment.y1}" r="${mobileRoute ? 2.9 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
+            <circle cx="${segment.x2}" cy="${segment.y2}" r="${mobileRoute ? 2.9 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
             <g transform="translate(${segment.midX}, ${segment.labelY})" pointer-events="none">
-              <rect x="-17" y="-9" width="34" height="18" rx="9" fill="rgba(255,255,255,0.96)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="10" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
+              <rect x="${mobileRoute ? -13 : -17}" y="${mobileRoute ? -7 : -9}" width="${mobileRoute ? 26 : 34}" height="${mobileRoute ? 14 : 18}" rx="${mobileRoute ? 7 : 9}" fill="rgba(255,255,255,0.96)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="${mobileRoute ? 8.5 : 10}" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
             </g>
           </g>`).join('')}
           </svg>
@@ -4364,11 +4577,12 @@
     const { compact = false } = options;
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
-    const width = compact ? 256 : Math.max(460, dayRoutes.length * 152);
-    const height = compact ? 70 : 112;
-    const paddingX = compact ? 20 : 28;
+    const mobileRoute = !compact && isMobileRouteViewport();
+    const width = compact ? 256 : Math.max(mobileRoute ? 340 : 460, dayRoutes.length * (mobileRoute ? 108 : 152));
+    const height = compact ? 70 : (mobileRoute ? 76 : 112);
+    const paddingX = compact ? 20 : (mobileRoute ? 20 : 28);
     const usableWidth = width - paddingX * 2;
-    const wave = compact ? [0, 6, -5, 8] : [0, 8, -6, 10, -5];
+    const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 4, -4, 5, -3] : [0, 8, -6, 10, -5]);
     const pointCount = dayRoutes.length + 1;
     const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getRouteSvgLabelIndices(pointCount, false));
     const pointLabelMaxLen = compact ? 4 : 7;
@@ -4402,22 +4616,22 @@
       <svg class="route-svg${compact ? ' compact' : ''} plan-svg route-plan-day-svg${compact ? ' compact' : ''}"${compact ? '' : ` style="width:${width}px"`} viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         ${segments.map(segment => `
           <g>
-            <path class="route-svg-segment" d="M ${segment.from.x} ${segment.from.y} L ${segment.to.x} ${segment.to.y}" fill="none" stroke="${segment.color}" stroke-width="${compact ? 4 : 5}" stroke-linecap="round" stroke-linejoin="round" opacity="0.88"></path>
-            <g transform="translate(${(segment.from.x + segment.to.x) / 2}, ${Math.min(segment.from.y, segment.to.y) - (compact ? 10 : 13)})" pointer-events="none">
-              <rect x="${compact ? -9 : -20}" y="-9" width="${compact ? 18 : 40}" height="18" rx="9" fill="rgba(255,255,255,0.94)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="${compact ? 9 : 9}" fill="${segment.color}">${escapeHtml(compact ? segment.icon : `${segment.icon} ${segment.label}`)}</text>
+            <path class="route-svg-segment" d="M ${segment.from.x} ${segment.from.y} L ${segment.to.x} ${segment.to.y}" fill="none" stroke="${segment.color}" stroke-width="${compact ? 4 : (mobileRoute ? 3.3 : 5)}" stroke-linecap="round" stroke-linejoin="round" opacity="0.88"></path>
+            <g transform="translate(${(segment.from.x + segment.to.x) / 2}, ${Math.min(segment.from.y, segment.to.y) - (compact ? 10 : (mobileRoute ? 9 : 13))})" pointer-events="none">
+              <rect x="${compact ? -9 : (mobileRoute ? -15 : -20)}" y="${mobileRoute && !compact ? -7 : -9}" width="${compact ? 18 : (mobileRoute ? 30 : 40)}" height="${mobileRoute && !compact ? 14 : 18}" rx="${mobileRoute && !compact ? 7 : 9}" fill="rgba(255,255,255,0.94)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="${compact ? 9 : (mobileRoute ? 8 : 9)}" fill="${segment.color}">${escapeHtml(compact ? segment.icon : (mobileRoute ? segment.icon : `${segment.icon} ${segment.label}`))}</text>
             </g>
           </g>`).join('')}
         ${points.map((point, index) => `
           <g class="route-svg-node" transform="translate(${point.x}, ${point.y})">
-            <circle r="${compact ? 4.6 : 5}" fill="#fff" stroke="${index === 0 ? '#34C759' : index === pointCount - 1 ? '#FF9F0A' : point.color}" stroke-width="${compact ? 1.9 : 2.2}"></circle>
+            <circle r="${compact ? 4.6 : (mobileRoute ? 3.8 : 5)}" fill="#fff" stroke="${index === 0 ? '#34C759' : index === pointCount - 1 ? '#FF9F0A' : point.color}" stroke-width="${compact ? 1.9 : (mobileRoute ? 1.7 : 2.2)}"></circle>
           </g>`).join('')}
         ${points.map((point, index) => {
           if (!labelIndexSet.has(index)) return '';
           const anchor = index === 0 ? 'start' : (index === pointCount - 1 ? 'end' : 'middle');
           const x = index === 0 ? point.x + 2 : (index === pointCount - 1 ? point.x - 2 : point.x);
-          const y = Math.min(height - (compact ? 5 : 7), point.y + (compact ? 16 : (index % 2 === 0 ? 19 : 26)));
-          return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${compact ? 8.5 : 9}" fill="#475569" stroke="rgba(255,255,255,0.94)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(point.location || '未定', pointLabelMaxLen))}</text>`;
+          const y = Math.min(height - (compact ? 5 : (mobileRoute ? 5 : 7)), point.y + (compact ? 16 : (mobileRoute ? 14 : (index % 2 === 0 ? 19 : 26))));
+          return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${compact ? 8.5 : (mobileRoute ? 8 : 9)}" fill="#475569" stroke="rgba(255,255,255,0.94)" stroke-width="${mobileRoute && !compact ? 2.4 : 3}" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(point.location || '未定', mobileRoute && !compact ? 5 : pointLabelMaxLen))}</text>`;
         }).join('')}
       </svg>`;
     if (compact) return svg;
@@ -4743,7 +4957,7 @@
     const createSnapHaptic = { value: null };
     const cp = document.getElementById(`create-preview-${date}`);
     const ind = document.getElementById(`indicator-${date}`);
-    const MOBILE_CREATE_LONG_PRESS_MS = 280;
+    const MOBILE_CREATE_LONG_PRESS_MS = 420;
 
     const getDefaultCreateDurationMinutes = () => {
       const currentZoom = dayTimelineZoom.get(date) || 1;
@@ -4759,7 +4973,8 @@
       cp.classList.add('google-create-preview');
       const startTime = minToTime(Math.min(previewStart, previewEnd));
       const endTime = minToTime(Math.max(previewStart, previewEnd));
-      cp.innerHTML = `<div class="create-preview-inner"><span class="create-preview-range">${startTime} → ${endTime}</span><span class="create-preview-duration">${formatDurationHours(Math.max(15, Math.max(previewStart, previewEnd) - Math.min(previewStart, previewEnd)))}</span></div>`;
+      cp.dataset.startTime = startTime;
+      cp.dataset.endTime = endTime;
     };
 
     const clearCreateArmTimer = () => {
@@ -4775,7 +4990,6 @@
       triggerHaptic('soft');
       createPreviewEndMin = clampTime(createStartMin + getDefaultCreateDurationMinutes());
       renderCreatePreview(createStartMin, createPreviewEndMin);
-      showTimeIndicator(ind, createStartMin);
     };
 
     timeline.addEventListener('pointerdown', (e) => {
@@ -4790,7 +5004,7 @@
       createPointerType = e.pointerType || '';
       createArmed = createPointerType !== 'touch' && createPointerType !== 'pen';
       createTouchMoved = false;
-      createDragThreshold = getPointerDragThreshold(e, 5, 10);
+      createDragThreshold = getPointerDragThreshold(e, 5, 12);
       createPointerId = e.pointerId;
       createSnapHaptic.value = createStartMin;
       clearCreateArmTimer();
@@ -4829,7 +5043,6 @@
       const previewStart = Math.min(createStartMin, snappedEnd);
       const previewEnd = Math.max(createStartMin, snappedEnd);
       renderCreatePreview(previewStart, previewEnd);
-      showTimeIndicator(ind, Math.max(createStartMin, snappedEnd));
     }
 
     function onPointerUp(e) {
@@ -4840,6 +5053,8 @@
       cp.style.display = 'none';
       cp.classList.remove('google-create-preview');
       cp.innerHTML = '';
+      delete cp.dataset.startTime;
+      delete cp.dataset.endTime;
       createPreviewVisible = false;
       hideTimeIndicator(ind);
       if (createPointerId != null && timeline.hasPointerCapture && timeline.hasPointerCapture(createPointerId)) {
@@ -4860,7 +5075,7 @@
         if (startTime !== endTime) openActivityModal(date, startTime, null, endTime);
       } else if (createArmed && (createPointerType === 'touch' || createPointerType === 'pen')) {
         openActivityModal(date, minToTime(createStartMin), null, minToTime(clampTime(createStartMin + getDefaultCreateDurationMinutes())));
-      } else if (!createTouchMoved) {
+      } else if (createPointerType !== 'touch' && createPointerType !== 'pen' && !createTouchMoved) {
         openActivityModal(date, minToTime(createStartMin));
       }
       createPointerId = null;
@@ -4868,12 +5083,6 @@
       createArmed = false;
       createTouchMoved = false;
       createSnapHaptic.value = null;
-    }
-
-    function showTimeIndicator(indicatorEl, minutes) {
-      indicatorEl.style.top = `${timelineMinutesToOffset(timeline, minutes)}px`;
-      indicatorEl.querySelector('.time-indicator-text').textContent = minToTime(minutes);
-      indicatorEl.style.display = 'flex';
     }
 
     function hideTimeIndicator(indicatorEl) {
@@ -5851,9 +6060,9 @@
       updateState: updateDaySliderMask,
       stopInertia: () => stopDaySliderInertia(slider),
       startInertia: (velocity) => startDaySliderInertia(slider, velocity),
-      suppressDelay: 220,
+      suppressDelay: 280,
       dragThresholdMouse: 6,
-      dragThresholdTouch: 10,
+      dragThresholdTouch: 3,
       onTap: (e) => {
         const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('.day-toggle');
         if (hit && slider.contains(hit)) {
@@ -5869,7 +6078,8 @@
     const slider = document.getElementById('daySlider');
     slider.innerHTML = days.map(date => {
       const edited = dayEdited(plan, date);
-      return `<button class="day-toggle${edited?' edited':''}" data-date="${date}">${date}</button>`;
+      const label = getDayToggleLabel(date);
+      return `<button class="day-toggle${edited?' edited':''}" data-date="${date}" title="${escapeHtml(label.fullDate)}" aria-label="${escapeHtml(`${label.fullDate} ${label.weekday}`)}"><span class="day-toggle-full">${escapeHtml(label.fullDate)}</span><span class="day-toggle-short">${escapeHtml(label.shortDate)}</span><span class="day-toggle-weekday">${escapeHtml(label.weekday)}</span></button>`;
     }).join('');
     attachDaySliderDragScroll(slider);
     slider.querySelectorAll('.day-toggle').forEach(btn => {
@@ -5960,10 +6170,14 @@
     container.innerHTML = '';
     const toolbar = document.createElement('div');
     toolbar.className = 'editor-toolbar';
+    const dayTitle = document.createElement('div');
+    dayTitle.className = 'editor-day-title';
+    dayTitle.textContent = formatPlanDateSummary(date);
     const undoBtn = document.createElement('button');
     undoBtn.className = 'undo-btn';
     undoBtn.textContent = '↩ 撤销';
     undoBtn.onclick = () => undo(date);
+    toolbar.appendChild(dayTitle);
     toolbar.appendChild(undoBtn);
     container.appendChild(toolbar);
 
@@ -6022,9 +6236,10 @@
       const notePreview = escapeHtml(getActivityPreviewNote(act));
       block.dataset.index = act.origIdx;
       if (isTransport) block.classList.add(`transport-${previewDensity}`);
+      const editTimeHandles = `<div class="activity-edit-time start">${escapeHtml(act.startTime)}</div><div class="activity-edit-time end">${escapeHtml(act.endTime)}</div>`;
       block.innerHTML = isTransport
-        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`
-        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`;
+        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>${editTimeHandles}`
+        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>${editTimeHandles}`;
       timeline.appendChild(block);
       attachBlockEvents(block, date, act.origIdx);
     });
@@ -6033,7 +6248,9 @@
   function attachBlockEvents(block, date, index) {
     const plan = getPlan(currentPlanId);
     const dayData = plan.days[date];
-    const DRAG_ARM_DELAY_MS = 80;
+    const DRAG_ARM_DELAY_MS = 90;
+    const TOUCH_EDIT_ARM_DELAY_MS = 360;
+    const TOUCH_SCROLL_CANCEL_PX = 12;
     const SHORT_BLOCK_EDGE_ZONE_MIN = 22;
     const SHORT_BLOCK_EDGE_ZONE_MAX = 34;
     let dragType = null;
@@ -6044,14 +6261,21 @@
     let previewStartMin = 0;
     let previewEndMin = 0;
     let dragArmTimer = null;
+    let touchEditArmTimer = null;
+    let touchDragArmed = false;
+    let touchTapStartX = 0;
+    let touchTapStartY = 0;
+    let touchTapMoved = false;
     const dragSnapHaptic = { value: null };
     const timeline = document.getElementById(`timeline-${date}`);
     const indicator = document.getElementById(`indicator-${date}`);
     const blockTimeLabel = block.querySelector('.activity-time');
+    const editStartLabel = block.querySelector('.activity-edit-time.start');
+    const editEndLabel = block.querySelector('.activity-edit-time.end');
     const initialBlockTimeLabel = blockTimeLabel?.textContent || '';
 
     const clearDragVisualState = () => {
-      block.classList.remove('drag-pressing', 'drag-armed', 'edge-hint-top', 'edge-hint-bottom', 'resizing-top', 'resizing-bottom', 'dragging');
+      block.classList.remove('drag-pressing', 'drag-armed', 'calendar-touch-armed', 'edge-hint-top', 'edge-hint-bottom', 'resizing-top', 'resizing-bottom', 'dragging');
     };
 
     const clearDragArmTimer = () => {
@@ -6060,18 +6284,38 @@
       dragArmTimer = null;
     };
 
+    const clearTouchEditArmTimer = () => {
+      if (!touchEditArmTimer) return;
+      clearTimeout(touchEditArmTimer);
+      touchEditArmTimer = null;
+    };
+
     const armDragPreview = () => {
       if (moved) return;
       block.classList.add('drag-armed');
     };
 
+    const updateEditTimeLabels = (startMin, endMin) => {
+      if (editStartLabel) editStartLabel.textContent = minToTime(snapMinutesToQuarter(startMin));
+      if (editEndLabel) editEndLabel.textContent = minToTime(snapMinutesToQuarter(endMin));
+    };
+
+    const captureActiveTouchPointer = () => {
+      try {
+        block.setPointerCapture(activePointerId);
+      } catch {
+        // Pointer capture can fail if the browser already released the touch.
+      }
+    };
+
     const isTouchPointer = (event) => event.pointerType === 'touch' || event.pointerType === 'pen';
 
     const getShortBlockEdgeIntent = (event) => {
-      if (!isTouchPointer(event) || !block.classList.contains('touch-short-block')) return null;
+      if (!isTouchPointer(event)) return null;
       const rect = block.getBoundingClientRect();
       if (!rect.height) return null;
-      const edgeZone = Math.min(SHORT_BLOCK_EDGE_ZONE_MAX, Math.max(SHORT_BLOCK_EDGE_ZONE_MIN, rect.height * 0.34));
+      const edgeRatio = block.classList.contains('touch-short-block') ? 0.34 : 0.22;
+      const edgeZone = Math.min(SHORT_BLOCK_EDGE_ZONE_MAX, Math.max(SHORT_BLOCK_EDGE_ZONE_MIN, rect.height * edgeRatio));
       const localY = event.clientY - rect.top;
       if (localY <= edgeZone) return 'top';
       if (localY >= rect.height - edgeZone) return 'bottom';
@@ -6081,15 +6325,47 @@
     const applyPreDragVisualState = (event) => {
       clearDragVisualState();
       clearDragArmTimer();
+      clearTouchEditArmTimer();
       if (dragType === 'move') {
-        block.classList.add('drag-pressing');
         if (isTouchPointer(event)) {
+          touchEditArmTimer = window.setTimeout(() => {
+            if (activePointerId == null || moved || touchTapMoved) return;
+            touchDragArmed = true;
+            block.classList.add('calendar-touch-armed', 'drag-armed');
+            updateEditTimeLabels(previewStartMin, previewEndMin);
+            captureActiveTouchPointer();
+            triggerHaptic('soft');
+          }, TOUCH_EDIT_ARM_DELAY_MS);
+        } else {
+          block.classList.add('drag-pressing');
           dragArmTimer = window.setTimeout(armDragPreview, DRAG_ARM_DELAY_MS);
         }
       } else if (dragType === 'top') {
-        block.classList.add('edge-hint-top');
+        if (isTouchPointer(event)) {
+          touchEditArmTimer = window.setTimeout(() => {
+            if (activePointerId == null || moved || touchTapMoved) return;
+            touchDragArmed = true;
+            block.classList.add('calendar-touch-armed', 'edge-hint-top');
+            updateEditTimeLabels(previewStartMin, previewEndMin);
+            captureActiveTouchPointer();
+            triggerHaptic('soft');
+          }, TOUCH_EDIT_ARM_DELAY_MS);
+        } else {
+          block.classList.add('edge-hint-top');
+        }
       } else if (dragType === 'bottom') {
-        block.classList.add('edge-hint-bottom');
+        if (isTouchPointer(event)) {
+          touchEditArmTimer = window.setTimeout(() => {
+            if (activePointerId == null || moved || touchTapMoved) return;
+            touchDragArmed = true;
+            block.classList.add('calendar-touch-armed', 'edge-hint-bottom');
+            updateEditTimeLabels(previewStartMin, previewEndMin);
+            captureActiveTouchPointer();
+            triggerHaptic('soft');
+          }, TOUCH_EDIT_ARM_DELAY_MS);
+        } else {
+          block.classList.add('edge-hint-bottom');
+        }
       }
     };
 
@@ -6117,14 +6393,16 @@
     const onPointerDown = (e) => {
       if (activePointerId != null && activePointerId !== e.pointerId) return;
       const target = e.target;
+      const touchPointer = isTouchPointer(e);
       const shortBlockEdgeIntent = getShortBlockEdgeIntent(e);
       if (target.closest('.drag-top')) dragType = 'top';
       else if (target.closest('.drag-bottom')) dragType = 'bottom';
       else if (shortBlockEdgeIntent) dragType = shortBlockEdgeIntent;
       else if (target.closest('.drag-body')) dragType = 'move';
-      else if (!isTouchPointer(e) && (target === block || target.closest('.activity-content'))) dragType = 'move';
+      else if (touchPointer && (target === block || target.closest('.activity-content'))) dragType = 'move';
+      else if (!touchPointer && (target === block || target.closest('.activity-content'))) dragType = 'move';
       else return;
-      e.preventDefault();
+      if (!touchPointer) e.preventDefault();
       e.stopPropagation();
       const act = dayData.activities[index];
       origStart = act.startTime;
@@ -6132,25 +6410,44 @@
       previewStartMin = timeToMin(origStart);
       previewEndMin = timeToMin(origEnd);
       startY = e.clientY;
+      touchTapStartX = e.clientX;
+      touchTapStartY = e.clientY;
+      touchTapMoved = false;
+      touchDragArmed = false;
       moved = false;
       activePointerId = e.pointerId;
       dragThreshold = dragType === 'move'
-        ? getPointerDragThreshold(e, 4, 8)
-        : getPointerDragThreshold(e, 4, 6);
+        ? getPointerDragThreshold(e, 4, 3)
+        : getPointerDragThreshold(e, 4, 3);
       dragSnapHaptic.value = dragType === 'bottom' ? previewEndMin : previewStartMin;
+      updateEditTimeLabels(previewStartMin, previewEndMin);
       applyPreDragVisualState(e);
       document.addEventListener('pointermove', onPointerMove);
       document.addEventListener('pointerup', onPointerUp);
       document.addEventListener('pointercancel', onPointerUp);
-      block.setPointerCapture(e.pointerId);
+      if (!touchPointer) block.setPointerCapture(e.pointerId);
     };
 
     const onPointerMove = (e) => {
       if (activePointerId !== e.pointerId) return;
+      const touchPointer = isTouchPointer(e);
+      const tapDx = Math.abs(e.clientX - touchTapStartX);
+      const tapDy = Math.abs(e.clientY - touchTapStartY);
+      if (touchPointer && !touchTapMoved && Math.max(tapDx, tapDy) > 8) {
+        touchTapMoved = true;
+      }
+      if (touchPointer && !touchDragArmed) {
+        if (Math.max(tapDx, tapDy) > TOUCH_SCROLL_CANCEL_PX) {
+          clearTouchEditArmTimer();
+          block.dataset.suppressClickUntil = String(Date.now() + 260);
+        }
+        return;
+      }
       if (Math.abs(e.clientY - startY) > dragThreshold && !moved) {
         moved = true;
         snapshotDate(date);
         clearDragArmTimer();
+        clearTouchEditArmTimer();
         clearDragVisualState();
         if (dragType === 'top') {
           block.classList.add('resizing-top', 'drag-armed', 'dragging');
@@ -6179,6 +6476,7 @@
         refreshTransportDurationPreview(newStart, endMin);
         updateSnapHapticState(dragSnapHaptic, newStart);
         updateBlockTimePreview(newStart, endMin);
+        updateEditTimeLabels(newStart, endMin);
       } else if (dragType === 'bottom') {
         let newEnd = clampTime(endMin + deltaMin);
         if (newEnd <= startMin + 15) newEnd = startMin + 15;
@@ -6188,6 +6486,7 @@
         refreshTransportDurationPreview(startMin, newEnd);
         updateSnapHapticState(dragSnapHaptic, newEnd);
         updateBlockTimePreview(startMin, newEnd);
+        updateEditTimeLabels(startMin, newEnd);
       } else if (dragType === 'move') {
         const duration = endMin - startMin;
         let newStart = clampTime(Math.min(startMin + deltaMin, 24 * 60 - duration));
@@ -6197,6 +6496,7 @@
         refreshTransportDurationPreview(newStart, newStart + duration);
         updateSnapHapticState(dragSnapHaptic, newStart);
         updateBlockTimePreview(newStart, newStart + duration);
+        updateEditTimeLabels(newStart, newStart + duration);
       }
     };
 
@@ -6206,6 +6506,7 @@
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('pointercancel', onPointerUp);
       clearDragArmTimer();
+      clearTouchEditArmTimer();
       clearDragVisualState();
       hideTimeIndicator(indicator);
       restoreBlockTimePreview();
@@ -6215,6 +6516,7 @@
       if (e?.type === 'pointercancel') {
         activePointerId = null;
         dragType = null;
+        touchDragArmed = false;
         dragSnapHaptic.value = null;
         return;
       }
@@ -6234,8 +6536,15 @@
           planRoute: true
         });
       }
+      if (touchTapMoved) {
+        block.dataset.suppressClickUntil = String(Date.now() + 260);
+      }
+      if (touchDragArmed) {
+        block.dataset.suppressClickUntil = String(Date.now() + 260);
+      }
       activePointerId = null;
       dragType = null;
+      touchDragArmed = false;
       dragSnapHaptic.value = null;
     };
 
@@ -6245,22 +6554,28 @@
       editActivity(date, index);
     };
 
-    function showTimeIndicator(ind, minutes, rangeStart = minutes, rangeEnd = minutes) {
-      const rangeStartMin = Math.min(rangeStart, rangeEnd);
-      const rangeEndMin = Math.max(rangeStart, rangeEnd);
-      const snappedStart = snapMinutesToQuarter(rangeStartMin);
-      const snappedEnd = snapMinutesToQuarter(rangeEndMin);
-      const label = ind.querySelector('.time-indicator-text');
-      ind.style.top = `${timelineMinutesToOffset(timeline, minutes)}px`;
-      if (snappedStart !== snappedEnd) {
-        label.classList.add('range-mode');
-        label.innerHTML = `<span class="time-indicator-primary">${minToTime(snappedStart)} → ${minToTime(snappedEnd)}</span><span class="time-indicator-secondary">${formatDurationHours(Math.max(15, snappedEnd - snappedStart))}</span>`;
-      } else {
-        label.classList.remove('range-mode');
-        label.textContent = minToTime(minutes);
+    let editTapPointerId = null;
+    let editTapStartX = 0;
+    let editTapStartY = 0;
+    const onEditTapPointerDown = (e) => {
+      if (!isTouchPointer(e) || e.target.closest('.drag-handle')) return;
+      editTapPointerId = e.pointerId;
+      editTapStartX = e.clientX;
+      editTapStartY = e.clientY;
+    };
+    const onEditTapPointerMove = (e) => {
+      if (editTapPointerId !== e.pointerId) return;
+      const dx = Math.abs(e.clientX - editTapStartX);
+      const dy = Math.abs(e.clientY - editTapStartY);
+      if (Math.max(dx, dy) > 8) {
+        block.dataset.suppressClickUntil = String(Date.now() + 260);
+        editTapPointerId = null;
       }
-      ind.style.display = 'flex';
-    }
+    };
+    const clearEditTapPointer = (e) => {
+      if (editTapPointerId === e.pointerId) editTapPointerId = null;
+    };
+
     function hideTimeIndicator(ind) {
       const label = ind.querySelector('.time-indicator-text');
       label.classList.remove('range-mode');
@@ -6268,6 +6583,10 @@
       ind.style.display = 'none';
     }
 
+    block.addEventListener('pointerdown', onEditTapPointerDown);
+    block.addEventListener('pointermove', onEditTapPointerMove);
+    block.addEventListener('pointerup', clearEditTapPointer);
+    block.addEventListener('pointercancel', clearEditTapPointer);
     block.addEventListener('pointerdown', onPointerDown);
     block.addEventListener('click', onClick);
   }
@@ -6724,9 +7043,9 @@
           <div class="field-group">
             <label>📅 日期范围</label>
             <div class="range-grid">
-              <input type="date" class="modern-input" id="planStart" value="${defaultStart}">
+              <div class="date-input-shell"><input type="date" class="modern-input" id="planStart" value="${defaultStart}"></div>
               <span class="range-arrow">→</span>
-              <input type="date" class="modern-input" id="planEnd" value="${defaultEnd}">
+              <div class="date-input-shell"><input type="date" class="modern-input" id="planEnd" value="${defaultEnd}"></div>
             </div>
           </div>
           <div class="field-group">
