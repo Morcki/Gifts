@@ -511,7 +511,7 @@
     .tag-chip.fixed .tag-del { display: none; }
 
     .timeline-container {
-      --timeline-height: clamp(520px, calc(100dvh - 290px), 760px);
+      --timeline-height: clamp(560px, calc(100dvh - 270px), 820px);
       background: rgba(255,255,255,0.55); backdrop-filter: blur(25px);
       -webkit-backdrop-filter: blur(25px); border-radius: 18px;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.02); position: relative;
@@ -531,15 +531,15 @@
       padding: 16px 0 8px 0;
     }
 
-    @media (max-width: 640px) {
+    @media (pointer: coarse), (max-width: 640px) {
       .timeline-container {
-        --timeline-height: clamp(540px, calc(100dvh - 248px), 780px);
+        --timeline-height: clamp(640px, calc(100dvh - 176px), 920px);
       }
     }
 
-    @media (max-width: 640px) and (max-height: 760px) {
+    @media ((pointer: coarse) and (max-height: 760px)), ((max-width: 640px) and (max-height: 760px)) {
       .timeline-container {
-        --timeline-height: clamp(500px, calc(100dvh - 228px), 640px);
+        --timeline-height: clamp(580px, calc(100dvh - 156px), 780px);
       }
     }
     .hour-marker {
@@ -554,6 +554,15 @@
     .hour-label {
       width: 28px; text-align: right; font-size: 10px; color: #999;
       font-weight: 500; padding-right: 6px;
+    }
+    @media (max-width: 640px) {
+      .hour-line {
+        height: 1.5px;
+        background: rgba(71,85,105,0.16);
+      }
+      .hour-label {
+        color: #64748B;
+      }
     }
     .activity-block {
       position: absolute; border-radius: 10px; padding: 6px 10px;
@@ -837,67 +846,7 @@
     .activity-block.resizing-bottom {
       box-shadow: 0 16px 30px rgba(15,23,42,0.20), 0 0 0 2px rgba(255,255,255,0.34);
     }
-    .drag-side-indicator {
-      position: absolute;
-      top: 8px;
-      right: 8px;
-      z-index: 4;
-      display: none;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-      max-width: 140px;
-      padding: 4px 12px;
-      border-radius: 999px;
-      background: var(--blue);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.15);
-      color: white;
-      pointer-events: none;
-      text-align: left;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      font-size: 11px;
-      font-weight: 700;
-    }
-    .activity-block.mini-drag-indicator .drag-side-indicator {
-      top: 6px;
-      right: 6px;
-      gap: 0;
-      max-width: 100px;
-      padding: 3px 8px;
-      font-size: 10px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.14);
-    }
-    .activity-block.dragging .drag-side-indicator {
-      display: inline-flex;
-    }
-    .drag-side-primary {
-      line-height: 1.1;
-      white-space: nowrap;
-    }
-    .activity-block.mini-drag-indicator .drag-side-primary {
-      font-size: 10px;
-      line-height: 1;
-    }
-    .drag-side-secondary {
-      display: inline-flex;
-      align-items: center;
-      padding-left: 8px;
-      border-left: 1px solid rgba(255,255,255,0.22);
-      color: rgba(255,255,255,0.86);
-      font-size: 10px;
-      font-weight: 650;
-      line-height: 1;
-      white-space: nowrap;
-    }
-    .activity-block.mini-drag-indicator .drag-side-secondary {
-      display: none;
-    }
-
     @media (pointer: coarse) {
-      .activity-block .activity-content {
-        padding-right: 20px;
-      }
       .activity-block .drag-handle {
         height: 28px;
       }
@@ -940,21 +889,6 @@
         width: 56px;
         height: 8px;
       }
-      .activity-block.dragging .activity-content {
-        padding-right: 100px;
-      }
-      .activity-block.mini-drag-indicator.dragging .activity-content {
-        padding-right: 80px;
-      }
-      .drag-side-indicator {
-        right: 6px;
-        top: 6px;
-        max-width: 112px;
-      }
-      .activity-block.mini-drag-indicator .drag-side-indicator {
-        max-width: 78px;
-        padding: 3px 7px;
-      }
     }
 
     .create-preview {
@@ -991,6 +925,35 @@
       color: #0C4A6E;
       font-size: 10px;
       font-weight: 700;
+    }
+    .create-preview::before,
+    .create-preview::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      width: 52px;
+      height: 7px;
+      transform: translateX(-50%);
+      border-radius: 999px;
+      background: rgba(255,255,255,0.98);
+      box-shadow: 0 3px 10px rgba(15,23,42,0.18);
+    }
+    .create-preview::before {
+      top: -4px;
+    }
+    .create-preview::after {
+      bottom: -4px;
+    }
+    .create-preview.google-create-preview {
+      border-left: 4px solid rgba(10,132,255,0.88);
+      box-shadow: inset 0 0 0 1px rgba(255,255,255,0.36), 0 14px 26px rgba(10,132,255,0.18);
+    }
+    .create-preview.google-create-preview .create-preview-inner {
+      width: min(100%, 168px);
+      padding-top: 10px;
+      padding-bottom: 10px;
+      border-radius: 16px;
+      background: rgba(255,255,255,0.84);
     }
 
     .time-indicator {
@@ -1479,20 +1442,27 @@
       border-radius: 16px; background: linear-gradient(180deg, rgba(255,255,255,0.62), rgba(245,247,255,0.34));
     }
     .route-day-activity-svg {
-      aspect-ratio: 520 / 146;
-      margin-bottom: 12px;
+      max-width: none;
+      height: auto;
+      aspect-ratio: auto;
+      margin-bottom: 0;
     }
-    .route-timeline-scroll {
+    .route-timeline-scroll,
+    .route-activity-scroll {
       overflow-x: auto; padding-bottom: 6px; margin-bottom: 10px;
       scrollbar-width: none; -ms-overflow-style: none;
       cursor: grab; user-select: none;
       touch-action: pan-x;
       position: relative;
     }
-    .route-timeline-scroll::-webkit-scrollbar { display: none; }
-    .route-timeline-scroll.dragging-timeline { cursor: grabbing; }
+    .route-timeline-scroll::-webkit-scrollbar,
+    .route-activity-scroll::-webkit-scrollbar { display: none; }
+    .route-timeline-scroll.dragging-timeline,
+    .route-activity-scroll.dragging-strip { cursor: grabbing; }
     .route-timeline-scroll::before,
-    .route-timeline-scroll::after {
+    .route-timeline-scroll::after,
+    .route-activity-scroll::before,
+    .route-activity-scroll::after {
       content: '';
       position: sticky;
       top: 0;
@@ -1504,18 +1474,22 @@
       z-index: 2;
       display: block;
     }
-    .route-timeline-scroll::before {
+    .route-timeline-scroll::before,
+    .route-activity-scroll::before {
       left: 0;
       float: left;
       background: linear-gradient(90deg, rgba(255,255,255,0.96), rgba(255,255,255,0));
     }
-    .route-timeline-scroll::after {
+    .route-timeline-scroll::after,
+    .route-activity-scroll::after {
       right: 0;
       float: right;
       background: linear-gradient(270deg, rgba(255,255,255,0.96), rgba(255,255,255,0));
     }
     .route-timeline-scroll.has-left-mask::before,
-    .route-timeline-scroll.has-right-mask::after {
+    .route-timeline-scroll.has-right-mask::after,
+    .route-activity-scroll.has-left-mask::before,
+    .route-activity-scroll.has-right-mask::after {
       opacity: 1;
     }
     .route-timeline-svg {
@@ -3383,6 +3357,7 @@
       pinnedActivityIndex: routePanel.dataset.pinnedActivityIndex || '',
       activeActivityIndex: routePanel.dataset.activeActivityIndex || '',
       suppressClickUntil: routePanel.dataset.suppressClickUntil || '',
+      activityScrollLeft: routePanel.querySelector('.route-activity-scroll')?.scrollLeft || 0,
       timelineScrollLeft: routePanel.querySelector('.route-timeline-scroll')?.scrollLeft || 0,
       segmentStripScrollLeft: routePanel.querySelector('.route-segment-strip')?.scrollLeft || 0,
       stopStripScrollLeft: routePanel.querySelector('.route-stop-strip')?.scrollLeft || 0
@@ -3421,6 +3396,11 @@
       restoreRouteActivityHighlight(routePanel);
     }
     if (state.suppressClickUntil) routePanel.dataset.suppressClickUntil = state.suppressClickUntil;
+    const activityScroll = routePanel.querySelector('.route-activity-scroll');
+    if (activityScroll) {
+      activityScroll.scrollLeft = state.activityScrollLeft || 0;
+      updateRouteTimelineMask(activityScroll);
+    }
     const timelineScroll = routePanel.querySelector('.route-timeline-scroll');
     if (timelineScroll) {
       timelineScroll.scrollLeft = state.timelineScrollLeft || 0;
@@ -3528,17 +3508,23 @@
     stage.style.setProperty('--timeline-edge-pad-right', `${rightPad}px`);
   }
 
-  function stopRouteTimelineInertia(scrollWrap) {
-    if (scrollWrap._timelineInertiaFrame) {
-      cancelAnimationFrame(scrollWrap._timelineInertiaFrame);
-      scrollWrap._timelineInertiaFrame = null;
+  function stopHorizontalInertia(scrollWrap, frameKey = '_inertiaFrame') {
+    if (scrollWrap?.[frameKey]) {
+      cancelAnimationFrame(scrollWrap[frameKey]);
+      scrollWrap[frameKey] = null;
     }
   }
 
-  function startRouteTimelineInertia(scrollWrap, velocity) {
-    stopRouteTimelineInertia(scrollWrap);
+  function startHorizontalInertia(scrollWrap, velocity, options = {}) {
+    const {
+      frameKey = '_inertiaFrame',
+      updateState = null,
+      onComplete = null
+    } = options;
+    stopHorizontalInertia(scrollWrap, frameKey);
     if (Math.abs(velocity) < 0.02) {
-      updateRouteTimelineMask(scrollWrap);
+      if (updateState) updateState(scrollWrap);
+      if (onComplete) onComplete(scrollWrap);
       return;
     }
     let currentVelocity = velocity;
@@ -3547,45 +3533,82 @@
       const dt = Math.min(32, Math.max(1, now - lastTime));
       lastTime = now;
       scrollWrap.scrollLeft -= currentVelocity * dt;
-      updateRouteTimelineMask(scrollWrap);
+      if (updateState) updateState(scrollWrap);
       currentVelocity *= 0.92;
       if (Math.abs(currentVelocity) < 0.02) {
-        scrollWrap._timelineInertiaFrame = null;
+        scrollWrap[frameKey] = null;
+        if (updateState) updateState(scrollWrap);
+        if (onComplete) onComplete(scrollWrap);
         return;
       }
-      scrollWrap._timelineInertiaFrame = requestAnimationFrame(step);
+      scrollWrap[frameKey] = requestAnimationFrame(step);
     };
-    scrollWrap._timelineInertiaFrame = requestAnimationFrame(step);
+    scrollWrap[frameKey] = requestAnimationFrame(step);
   }
 
-  function attachStripDragScroll(strip, suppressEl) {
-    if (!strip || strip.dataset.dragScrollBound === 'true') return;
-    strip.dataset.dragScrollBound = 'true';
+  function stopRouteTimelineInertia(scrollWrap) {
+    stopHorizontalInertia(scrollWrap, '_timelineInertiaFrame');
+  }
+
+  function startRouteTimelineInertia(scrollWrap, velocity) {
+    startHorizontalInertia(scrollWrap, velocity, {
+      frameKey: '_timelineInertiaFrame',
+      updateState: updateRouteTimelineMask
+    });
+  }
+
+  function attachStripDragScroll(strip, suppressEl, options = {}) {
+    const {
+      boundKey = 'dragScrollBound',
+      dragClass = 'dragging-strip',
+      updateState = null,
+      stopInertia = () => stopHorizontalInertia(strip),
+      startInertia = (velocity) => startHorizontalInertia(strip, velocity, { updateState }),
+      onTap = null,
+      suppressDelay = 220,
+      dragThresholdMouse = 5,
+      dragThresholdTouch = 8
+    } = options;
+    if (!strip || strip.dataset[boundKey] === 'true') return;
+    strip.dataset[boundKey] = 'true';
     const clickGuard = suppressEl || strip;
     let pointerId = null, startX = 0, startScrollLeft = 0;
     let hasPointerCapture = false;
     let lastX = 0, lastTime = 0, velocity = 0, moved = false;
-    const DRAG_THRESHOLD = 5;
-    const stopDrag = () => {
-      if (pointerId != null && hasPointerCapture && strip.hasPointerCapture(pointerId)) strip.releasePointerCapture(pointerId);
-      if (moved) {
-        clickGuard.dataset.suppressClickUntil = String(Date.now() + 200);
-        let v = velocity;
-        const step = () => {
-          strip.scrollLeft -= v * 16;
-          v *= 0.90;
-          if (Math.abs(v) > 0.02) strip._inertia = requestAnimationFrame(step);
-          else strip._inertia = null;
-        };
-        if (strip._inertia) cancelAnimationFrame(strip._inertia);
-        strip._inertia = requestAnimationFrame(step);
+    let dragThreshold = dragThresholdMouse;
+    const trySetPointerCapture = (nextPointerId) => {
+      try {
+        strip.setPointerCapture(nextPointerId);
+        hasPointerCapture = true;
+      } catch {
+        hasPointerCapture = false;
       }
-      strip.classList.remove('dragging-strip');
+    };
+    const tryReleasePointerCapture = (nextPointerId) => {
+      if (!hasPointerCapture) return;
+      try {
+        if (strip.hasPointerCapture(nextPointerId)) strip.releasePointerCapture(nextPointerId);
+      } catch {
+        // Ignore environments where the pointer is no longer active.
+      }
+      hasPointerCapture = false;
+    };
+    const stopDrag = (e) => {
+      if (pointerId == null || (e && pointerId !== e.pointerId)) return;
+      if (pointerId != null) tryReleasePointerCapture(pointerId);
+      if (moved) {
+        clickGuard.dataset.suppressClickUntil = String(Date.now() + suppressDelay);
+        startInertia(velocity);
+      } else if (onTap && e) {
+        onTap(e);
+      }
+      strip.classList.remove(dragClass);
       pointerId = null; moved = false; velocity = 0; hasPointerCapture = false;
     };
     strip.onpointerdown = (e) => {
       if (e.button > 0) return;
-      if (strip._inertia) { cancelAnimationFrame(strip._inertia); strip._inertia = null; }
+      stopInertia();
+      dragThreshold = e.pointerType === 'touch' || e.pointerType === 'pen' ? dragThresholdTouch : dragThresholdMouse;
       pointerId = e.pointerId; startX = e.clientX; startScrollLeft = strip.scrollLeft;
       lastX = e.clientX; lastTime = performance.now(); moved = false; velocity = 0;
       hasPointerCapture = false;
@@ -3593,102 +3616,58 @@
     strip.onpointermove = (e) => {
       if (pointerId !== e.pointerId) return;
       const dx = e.clientX - startX;
-      if (!moved && Math.abs(dx) > DRAG_THRESHOLD) {
+      if (!moved && Math.abs(dx) > dragThreshold) {
         moved = true;
-        strip.classList.add('dragging-strip');
-        if (!hasPointerCapture) {
-          strip.setPointerCapture(e.pointerId);
-          hasPointerCapture = true;
-        }
+        strip.classList.add(dragClass);
+        if (!hasPointerCapture) trySetPointerCapture(e.pointerId);
       }
       if (!moved) return;
       e.preventDefault();
       strip.scrollLeft = startScrollLeft - dx;
+      if (updateState) updateState(strip);
       const now = performance.now();
-      velocity = (e.clientX - lastX) / Math.max(1, now - lastTime);
+      const dt = Math.max(1, now - lastTime);
+      const instantVelocity = (e.clientX - lastX) / dt;
+      velocity = moved ? (velocity * 0.65) + (instantVelocity * 0.35) : instantVelocity;
       lastX = e.clientX; lastTime = now;
     };
     strip.onpointerup = stopDrag;
     strip.onpointercancel = stopDrag;
+    strip.onpointerleave = (e) => {
+      if (pointerId === e.pointerId && (!hasPointerCapture || !strip.hasPointerCapture(pointerId))) stopDrag(e);
+    };
+    strip.onscroll = () => {
+      if (updateState) updateState(strip);
+    };
+    if (updateState) updateState(strip);
   }
 
   function attachRouteTimelineDragScroll(routePanel) {
     const scrollWrap = routePanel.querySelector('.route-timeline-scroll');
-    if (!scrollWrap || scrollWrap.dataset.dragScrollBound === 'true') return;
+    if (!scrollWrap) return;
     updateRouteTimelineEdgePadding(routePanel);
-    scrollWrap.dataset.dragScrollBound = 'true';
-    let pointerId = null;
-    let hasPointerCapture = false;
-    let startX = 0;
-    let startScrollLeft = 0;
-    let moved = false;
-    let lastX = 0;
-    let lastTime = 0;
-    let velocity = 0;
-    const DRAG_THRESHOLD = 6;
-
-    const stopDragging = () => {
-      if (pointerId != null && hasPointerCapture && scrollWrap.hasPointerCapture(pointerId)) {
-        scrollWrap.releasePointerCapture(pointerId);
-      }
-      if (moved) {
-        routePanel.dataset.suppressClickUntil = String(Date.now() + 220);
-        startRouteTimelineInertia(scrollWrap, velocity);
-      }
-      scrollWrap.classList.remove('dragging-timeline');
-      pointerId = null;
-      moved = false;
-      velocity = 0;
-      hasPointerCapture = false;
-    };
-
-    scrollWrap.onpointerdown = (e) => {
-      if (e.button > 0) return;
-      stopRouteTimelineInertia(scrollWrap);
-      pointerId = e.pointerId;
-      startX = e.clientX;
-      startScrollLeft = scrollWrap.scrollLeft;
-      lastX = e.clientX;
-      lastTime = performance.now();
-      moved = false;
-      velocity = 0;
-      hasPointerCapture = false;
-    };
-
-    scrollWrap.onpointermove = (e) => {
-      if (pointerId !== e.pointerId) return;
-      const deltaX = e.clientX - startX;
-      if (!moved && Math.abs(deltaX) > DRAG_THRESHOLD) {
-        moved = true;
-        scrollWrap.classList.add('dragging-timeline');
-        if (!hasPointerCapture) {
-          scrollWrap.setPointerCapture(e.pointerId);
-          hasPointerCapture = true;
-        }
-      }
-      if (!moved) return;
-      e.preventDefault();
-      scrollWrap.scrollLeft = startScrollLeft - deltaX;
-      updateRouteTimelineMask(scrollWrap);
-      const now = performance.now();
-      const dt = Math.max(1, now - lastTime);
-      velocity = (e.clientX - lastX) / dt;
-      lastX = e.clientX;
-      lastTime = now;
-    };
-
-    scrollWrap.onpointerup = stopDragging;
-    scrollWrap.onpointercancel = stopDragging;
-    scrollWrap.onpointerleave = (e) => {
-      if (pointerId === e.pointerId && (!hasPointerCapture || !scrollWrap.hasPointerCapture(pointerId))) stopDragging();
-    };
-    scrollWrap.onscroll = () => updateRouteTimelineMask(scrollWrap);
-    updateRouteTimelineMask(scrollWrap);
+    attachStripDragScroll(scrollWrap, routePanel, {
+      dragClass: 'dragging-timeline',
+      updateState: updateRouteTimelineMask,
+      stopInertia: () => stopRouteTimelineInertia(scrollWrap),
+      startInertia: (velocity) => startRouteTimelineInertia(scrollWrap, velocity),
+      suppressDelay: 220,
+      dragThresholdMouse: 6,
+      dragThresholdTouch: 8
+    });
   }
 
   function attachDayRouteInteractions(date) {
     const routePanel = document.getElementById(`dayRoutePanel-${date}`);
     if (!routePanel) return;
+    const activityScroll = routePanel.querySelector('.route-activity-scroll');
+    if (activityScroll) {
+      attachStripDragScroll(activityScroll, routePanel, {
+        updateState: updateRouteTimelineMask,
+        dragThresholdMouse: 6,
+        dragThresholdTouch: 8
+      });
+    }
     attachRouteTimelineDragScroll(routePanel);
     attachStripDragScroll(routePanel.querySelector('.route-segment-strip'), routePanel);
     attachStripDragScroll(routePanel.querySelector('.route-stop-strip'), routePanel);
@@ -4289,19 +4268,19 @@
   function renderDayActivityRouteSvg(dayData) {
     const { segments, locations } = buildDayRouteActivitySegments(dayData);
     if (!segments.length || !locations.length) return '';
-    const width = 520;
-    const leftPad = 52;
-    const rightPad = 8;
-    const topPad = 28;
-    const bottomPad = 42;
-    const rowGap = locations.length <= 1 ? 0 : 30;
-    const usableWidth = width - leftPad - rightPad;
+    const leftPad = 44;
+    const rightPad = 6;
+    const topPad = 24;
+    const bottomPad = 34;
+    const rowGap = locations.length <= 1 ? 0 : 24;
     const minTime = Math.min(...segments.map(segment => segment.startMin));
     const maxTime = Math.max(...segments.map(segment => segment.endMin));
     const paddedStart = Math.max(0, minTime - 16);
     const paddedEnd = Math.min(24 * 60, Math.max(maxTime + 16, paddedStart + 60));
     const timeRange = Math.max(60, paddedEnd - paddedStart);
-    const height = topPad + Math.max(1, locations.length - 1) * rowGap + bottomPad + 14;
+    const width = Math.max(460, Math.round((timeRange / 60) * 48) + leftPad + rightPad);
+    const usableWidth = width - leftPad - rightPad;
+    const height = topPad + Math.max(1, locations.length - 1) * rowGap + bottomPad + 10;
     const yForLocation = location => {
       const index = locationIndexMap.get(location);
       return topPad + (index != null ? index * rowGap : 0);
@@ -4310,10 +4289,10 @@
     const xForMinute = minute => leftPad + (usableWidth * (minute - paddedStart)) / timeRange;
     const positioned = segments.map(segment => {
       const x1 = xForMinute(segment.startMin);
-      const x2 = Math.max(xForMinute(segment.endMin), x1 + 18);
+      const x2 = Math.max(xForMinute(segment.endMin), x1 + 16);
       const y1 = yForLocation(segment.startLocation);
       const y2 = yForLocation(segment.endLocation);
-      const labelY = Math.min(height - 12, Math.max(y1, y2) + 18);
+      const labelY = Math.min(height - 10, Math.max(y1, y2) + 15);
       return {
         ...segment,
         x1,
@@ -4350,7 +4329,8 @@
       };
     }).filter(Boolean);
     return `
-      <svg class="route-svg route-day-activity-svg" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
+      <div class="route-activity-scroll">
+      <svg class="route-svg route-day-activity-svg" style="width:${width}px" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" aria-hidden="true">
         ${ticks.map(minute => {
           const x = xForMinute(minute);
           return `
@@ -4362,35 +4342,36 @@
         ${locations.map(location => {
           const y = yForLocation(location);
           return `
-            <text x="${leftPad - 10}" y="${y + 4}" text-anchor="end" font-size="11" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, 8))}</text>`;
+            <text x="${leftPad - 8}" y="${y + 4}" text-anchor="end" font-size="10" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, 7))}</text>`;
         }).join('')}
         ${connectors.map(connector => `
           <path class="route-svg-connector" d="M ${connector.fromX} ${connector.fromY} L ${connector.toX} ${connector.toY}" fill="none" stroke="${connector.color}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${connector.dash}" opacity="${connector.opacity}"></path>`).join('')}
         ${positioned.map(segment => `
           <g class="route-svg-activity" data-activity-index="${segment.activityIndex}">
             <path class="route-svg-activity-segment" d="M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}" fill="none" stroke="${segment.color}" stroke-width="6" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${segment.dash}" opacity="0.9"></path>
-            <circle cx="${segment.x1}" cy="${segment.y1}" r="4.2" fill="#fff" stroke="${segment.color}" stroke-width="2.2"></circle>
-            <circle cx="${segment.x2}" cy="${segment.y2}" r="4.2" fill="#fff" stroke="${segment.color}" stroke-width="2.2"></circle>
+            <circle cx="${segment.x1}" cy="${segment.y1}" r="3.9" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
+            <circle cx="${segment.x2}" cy="${segment.y2}" r="3.9" fill="#fff" stroke="${segment.color}" stroke-width="2"></circle>
             <g transform="translate(${segment.midX}, ${segment.labelY})" pointer-events="none">
-              <rect x="-19" y="-10" width="38" height="20" rx="10" fill="rgba(255,255,255,0.96)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="11" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
+              <rect x="-17" y="-9" width="34" height="18" rx="9" fill="rgba(255,255,255,0.96)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="10" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
             </g>
           </g>`).join('')}
-      </svg>`;
+          </svg>
+          </div>`;
   }
 
   function renderPlanDaySummarySvg(route, options = {}) {
     const { compact = false } = options;
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
-    const width = compact ? 280 : Math.max(520, dayRoutes.length * 180);
-    const height = compact ? 74 : 124;
-    const paddingX = compact ? 24 : 40;
+    const width = compact ? 256 : Math.max(460, dayRoutes.length * 152);
+    const height = compact ? 70 : 112;
+    const paddingX = compact ? 20 : 28;
     const usableWidth = width - paddingX * 2;
-    const wave = compact ? [0, 8, -6, 10] : [0, 10, -8, 12, -6];
+    const wave = compact ? [0, 6, -5, 8] : [0, 8, -6, 10, -5];
     const pointCount = dayRoutes.length + 1;
     const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getRouteSvgLabelIndices(pointCount, false));
-    const pointLabelMaxLen = compact ? 4 : 8;
+    const pointLabelMaxLen = compact ? 4 : 7;
     const points = Array.from({ length: pointCount }, (_, index) => {
       const x = pointCount === 1 ? width / 2 : paddingX + (usableWidth * index) / Math.max(1, pointCount - 1);
       const y = height / 2 + wave[index % wave.length];
@@ -4422,21 +4403,21 @@
         ${segments.map(segment => `
           <g>
             <path class="route-svg-segment" d="M ${segment.from.x} ${segment.from.y} L ${segment.to.x} ${segment.to.y}" fill="none" stroke="${segment.color}" stroke-width="${compact ? 4 : 5}" stroke-linecap="round" stroke-linejoin="round" opacity="0.88"></path>
-            <g transform="translate(${(segment.from.x + segment.to.x) / 2}, ${Math.min(segment.from.y, segment.to.y) - (compact ? 12 : 16)})" pointer-events="none">
-              <rect x="${compact ? -10 : -24}" y="-10" width="${compact ? 20 : 48}" height="20" rx="10" fill="rgba(255,255,255,0.94)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="${compact ? 10 : 10}" fill="${segment.color}">${escapeHtml(compact ? segment.icon : `${segment.icon} ${segment.label}`)}</text>
+            <g transform="translate(${(segment.from.x + segment.to.x) / 2}, ${Math.min(segment.from.y, segment.to.y) - (compact ? 10 : 13)})" pointer-events="none">
+              <rect x="${compact ? -9 : -20}" y="-9" width="${compact ? 18 : 40}" height="18" rx="9" fill="rgba(255,255,255,0.94)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="${compact ? 9 : 9}" fill="${segment.color}">${escapeHtml(compact ? segment.icon : `${segment.icon} ${segment.label}`)}</text>
             </g>
           </g>`).join('')}
         ${points.map((point, index) => `
           <g class="route-svg-node" transform="translate(${point.x}, ${point.y})">
-            <circle r="${compact ? 5 : 5.4}" fill="#fff" stroke="${index === 0 ? '#34C759' : index === pointCount - 1 ? '#FF9F0A' : point.color}" stroke-width="${compact ? 2 : 2.4}"></circle>
+            <circle r="${compact ? 4.6 : 5}" fill="#fff" stroke="${index === 0 ? '#34C759' : index === pointCount - 1 ? '#FF9F0A' : point.color}" stroke-width="${compact ? 1.9 : 2.2}"></circle>
           </g>`).join('')}
         ${points.map((point, index) => {
           if (!labelIndexSet.has(index)) return '';
           const anchor = index === 0 ? 'start' : (index === pointCount - 1 ? 'end' : 'middle');
           const x = index === 0 ? point.x + 2 : (index === pointCount - 1 ? point.x - 2 : point.x);
-          const y = Math.min(height - (compact ? 6 : 8), point.y + (compact ? 18 : (index % 2 === 0 ? 22 : 32)));
-          return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${compact ? 9 : 10}" fill="#475569" stroke="rgba(255,255,255,0.94)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(point.location || '未定', pointLabelMaxLen))}</text>`;
+          const y = Math.min(height - (compact ? 5 : 7), point.y + (compact ? 16 : (index % 2 === 0 ? 19 : 26)));
+          return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="${compact ? 8.5 : 9}" fill="#475569" stroke="rgba(255,255,255,0.94)" stroke-width="3" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(point.location || '未定', pointLabelMaxLen))}</text>`;
         }).join('')}
       </svg>`;
     if (compact) return svg;
@@ -4754,65 +4735,121 @@
     let createPreviewEndMin = 0;
     let createDragThreshold = 5;
     let createPointerId = null;
+    let createPointerType = '';
+    let createArmed = false;
+    let createTouchMoved = false;
+    let createArmTimer = null;
+    let createPreviewVisible = false;
     const createSnapHaptic = { value: null };
     const cp = document.getElementById(`create-preview-${date}`);
     const ind = document.getElementById(`indicator-${date}`);
+    const MOBILE_CREATE_LONG_PRESS_MS = 280;
+
+    const getDefaultCreateDurationMinutes = () => {
+      const currentZoom = dayTimelineZoom.get(date) || 1;
+      if (currentZoom >= 2.5) return 30;
+      if (currentZoom >= 1.5) return 45;
+      return 60;
+    };
+
+    const renderCreatePreview = (previewStart, previewEnd) => {
+      setTimelineSpanPosition(cp, timeline, Math.min(previewStart, previewEnd), Math.max(previewStart, previewEnd));
+      cp.style.display = 'flex';
+      createPreviewVisible = true;
+      cp.classList.add('google-create-preview');
+      const startTime = minToTime(Math.min(previewStart, previewEnd));
+      const endTime = minToTime(Math.max(previewStart, previewEnd));
+      cp.innerHTML = `<div class="create-preview-inner"><span class="create-preview-range">${startTime} → ${endTime}</span><span class="create-preview-duration">${formatDurationHours(Math.max(15, Math.max(previewStart, previewEnd) - Math.min(previewStart, previewEnd)))}</span></div>`;
+    };
+
+    const clearCreateArmTimer = () => {
+      if (!createArmTimer) return;
+      clearTimeout(createArmTimer);
+      createArmTimer = null;
+    };
+
+    const armCreateGesture = () => {
+      if (createPointerId == null || createDragging || createTouchMoved) return;
+      createArmed = true;
+      if (timeline.setPointerCapture) timeline.setPointerCapture(createPointerId);
+      triggerHaptic('soft');
+      createPreviewEndMin = clampTime(createStartMin + getDefaultCreateDurationMinutes());
+      renderCreatePreview(createStartMin, createPreviewEndMin);
+      showTimeIndicator(ind, createStartMin);
+    };
 
     timeline.addEventListener('pointerdown', (e) => {
       if (!e.target.classList.contains('timeline') &&
           !e.target.classList.contains('hour-marker') &&
           !e.target.classList.contains('hour-line') &&
           !e.target.classList.contains('hour-label')) return;
-      e.preventDefault();
       createStartMin = snapMinutesToQuarter(timelineClientYToMinutes(timeline, e.clientY));
       createPreviewEndMin = createStartMin;
       createStartY = e.clientY;
       createDragging = false;
-      createDragThreshold = getPointerDragThreshold(e, 5, 2);
+      createPointerType = e.pointerType || '';
+      createArmed = createPointerType !== 'touch' && createPointerType !== 'pen';
+      createTouchMoved = false;
+      createDragThreshold = getPointerDragThreshold(e, 5, 10);
       createPointerId = e.pointerId;
       createSnapHaptic.value = createStartMin;
-      if (timeline.setPointerCapture) timeline.setPointerCapture(e.pointerId);
+      clearCreateArmTimer();
+      if (createArmed) {
+        e.preventDefault();
+        if (timeline.setPointerCapture) timeline.setPointerCapture(e.pointerId);
+        createPreviewEndMin = clampTime(createStartMin + getDefaultCreateDurationMinutes());
+        renderCreatePreview(createStartMin, createPreviewEndMin);
+      } else {
+        createArmTimer = window.setTimeout(armCreateGesture, MOBILE_CREATE_LONG_PRESS_MS);
+      }
       document.addEventListener('pointermove', onPointerMove);
       document.addEventListener('pointerup', onPointerUp);
       document.addEventListener('pointercancel', onPointerUp);
     });
 
     function onPointerMove(e) {
-      if (Math.abs(e.clientY - createStartY) > createDragThreshold && !createDragging) {
+      if (createPointerId !== e.pointerId) return;
+      const deltaY = Math.abs(e.clientY - createStartY);
+      if (!createArmed && (createPointerType === 'touch' || createPointerType === 'pen')) {
+        if (deltaY > createDragThreshold) {
+          createTouchMoved = true;
+          clearCreateArmTimer();
+        }
+        return;
+      }
+      if (deltaY > createDragThreshold && !createDragging) {
         createDragging = true;
         snapshotDate(date);
-        cp.style.display = 'flex';
-        triggerHaptic('soft');
-        showTimeIndicator(ind, createStartMin);
       }
-      if (!createDragging) return;
+      if (!createArmed && !createDragging) return;
       e.preventDefault();
       const clampedMin = timelineClientYToMinutes(timeline, e.clientY);
       createPreviewEndMin = clampTime(clampedMin);
-      const start = createStartMin;
-      const end = createPreviewEndMin;
-      setTimelineSpanPosition(cp, timeline, Math.min(start, end), Math.max(start, end));
       const snappedEnd = updateSnapHapticState(createSnapHaptic, createPreviewEndMin);
       const previewStart = Math.min(createStartMin, snappedEnd);
       const previewEnd = Math.max(createStartMin, snappedEnd);
-      const startTime = minToTime(previewStart);
-      const endTime = minToTime(previewEnd);
-      cp.innerHTML = `<div class="create-preview-inner"><span class="create-preview-range">${startTime} → ${endTime}</span><span class="create-preview-duration">${formatDurationHours(Math.max(15, previewEnd - previewStart))}</span></div>`;
-      showTimeIndicator(ind, Math.max(start, snappedEnd));
+      renderCreatePreview(previewStart, previewEnd);
+      showTimeIndicator(ind, Math.max(createStartMin, snappedEnd));
     }
 
     function onPointerUp(e) {
       document.removeEventListener('pointermove', onPointerMove);
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('pointercancel', onPointerUp);
+      clearCreateArmTimer();
       cp.style.display = 'none';
+      cp.classList.remove('google-create-preview');
       cp.innerHTML = '';
+      createPreviewVisible = false;
       hideTimeIndicator(ind);
       if (createPointerId != null && timeline.hasPointerCapture && timeline.hasPointerCapture(createPointerId)) {
         timeline.releasePointerCapture(createPointerId);
       }
       if (e?.type === 'pointercancel') {
         createPointerId = null;
+        createPointerType = '';
+        createArmed = false;
+        createTouchMoved = false;
         createSnapHaptic.value = null;
         return;
       }
@@ -4821,10 +4858,15 @@
         const startTime = minToTime(Math.min(createStartMin, clampedEnd));
         const endTime = minToTime(Math.max(createStartMin, clampedEnd));
         if (startTime !== endTime) openActivityModal(date, startTime, null, endTime);
-      } else {
+      } else if (createArmed && (createPointerType === 'touch' || createPointerType === 'pen')) {
+        openActivityModal(date, minToTime(createStartMin), null, minToTime(clampTime(createStartMin + getDefaultCreateDurationMinutes())));
+      } else if (!createTouchMoved) {
         openActivityModal(date, minToTime(createStartMin));
       }
       createPointerId = null;
+      createPointerType = '';
+      createArmed = false;
+      createTouchMoved = false;
       createSnapHaptic.value = null;
     }
 
@@ -5794,90 +5836,25 @@
   }
 
   function stopDaySliderInertia(slider) {
-    if (slider._inertiaFrame) {
-      cancelAnimationFrame(slider._inertiaFrame);
-      slider._inertiaFrame = null;
-    }
+    stopHorizontalInertia(slider);
   }
 
   function startDaySliderInertia(slider, initialVelocity) {
-    stopDaySliderInertia(slider);
-    if (Math.abs(initialVelocity) < 0.02) {
-      updateDaySliderMask(slider);
-      snapDaySliderToNearest(slider);
-      return;
-    }
-    let velocity = initialVelocity;
-    let lastTime = performance.now();
-
-    const step = (now) => {
-      const dt = Math.min(32, Math.max(1, now - lastTime));
-      lastTime = now;
-      slider.scrollLeft -= velocity * dt;
-      updateDaySliderMask(slider);
-      velocity *= 0.92;
-      if (Math.abs(velocity) < 0.02) {
-        slider._inertiaFrame = null;
-        snapDaySliderToNearest(slider);
-        return;
-      }
-      slider._inertiaFrame = requestAnimationFrame(step);
-    };
-
-    slider._inertiaFrame = requestAnimationFrame(step);
+    startHorizontalInertia(slider, initialVelocity, {
+      updateState: updateDaySliderMask
+    });
   }
 
   function attachDaySliderDragScroll(slider) {
-    if (!slider || slider.dataset.dragScrollBound === 'true') return;
-    slider.dataset.dragScrollBound = 'true';
-    let pointerId = null;
-    let startX = 0;
-    let startScrollLeft = 0;
-    let lastX = 0;
-    let lastTime = 0;
-    let velocity = 0;
-    let moved = false;
-    const DRAG_THRESHOLD = 6;
-
-    slider.onpointerdown = (e) => {
-      if (e.button > 0) return;
-      stopDaySliderInertia(slider);
-      pointerId = e.pointerId;
-      startX = e.clientX;
-      startScrollLeft = slider.scrollLeft;
-      lastX = e.clientX;
-      lastTime = performance.now();
-      velocity = 0;
-      moved = false;
-      slider.classList.remove('dragging-slider');
-      slider.setPointerCapture(e.pointerId);
-    };
-
-    slider.onpointermove = (e) => {
-      if (pointerId !== e.pointerId) return;
-      const deltaX = e.clientX - startX;
-      if (!moved && Math.abs(deltaX) > DRAG_THRESHOLD) {
-        moved = true;
-        slider.classList.add('dragging-slider');
-      }
-      if (!moved) return;
-      e.preventDefault();
-      slider.scrollLeft = startScrollLeft - deltaX;
-      updateDaySliderMask(slider);
-      const now = performance.now();
-      const dt = Math.max(1, now - lastTime);
-      velocity = (e.clientX - lastX) / dt;
-      lastX = e.clientX;
-      lastTime = now;
-    };
-
-    const stopDragging = (e) => {
-      if (pointerId == null || (e && pointerId !== e.pointerId)) return;
-      if (slider.hasPointerCapture(pointerId)) slider.releasePointerCapture(pointerId);
-      if (moved) {
-        slider.dataset.suppressClickUntil = String(Date.now() + 220);
-        startDaySliderInertia(slider, velocity);
-      } else if (e) {
+    attachStripDragScroll(slider, slider, {
+      dragClass: 'dragging-slider',
+      updateState: updateDaySliderMask,
+      stopInertia: () => stopDaySliderInertia(slider),
+      startInertia: (velocity) => startDaySliderInertia(slider, velocity),
+      suppressDelay: 220,
+      dragThresholdMouse: 6,
+      dragThresholdTouch: 10,
+      onTap: (e) => {
         const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('.day-toggle');
         if (hit && slider.contains(hit)) {
           slider.dataset.handledTap = 'true';
@@ -5885,19 +5862,7 @@
           activateDayToggle(slider, hit);
         }
       }
-      slider.classList.remove('dragging-slider');
-      pointerId = null;
-      moved = false;
-      velocity = 0;
-    };
-
-    slider.onpointerup = stopDragging;
-    slider.onpointercancel = stopDragging;
-    slider.onpointerleave = (e) => {
-      if (pointerId === e.pointerId && !slider.hasPointerCapture(pointerId)) stopDragging(e);
-    };
-    slider.onscroll = () => updateDaySliderMask(slider);
-    updateDaySliderMask(slider);
+    });
   }
 
   function renderDaySlider(days, plan) {
@@ -6058,8 +6023,8 @@
       block.dataset.index = act.origIdx;
       if (isTransport) block.classList.add(`transport-${previewDensity}`);
       block.innerHTML = isTransport
-        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div><div class="drag-side-indicator" aria-hidden="true"><span class="drag-side-primary"></span><span class="drag-side-secondary"></span></div>`
-        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div><div class="drag-side-indicator" aria-hidden="true"><span class="drag-side-primary"></span><span class="drag-side-secondary"></span></div>`;
+        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`
+        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`;
       timeline.appendChild(block);
       attachBlockEvents(block, date, act.origIdx);
     });
@@ -6082,7 +6047,8 @@
     const dragSnapHaptic = { value: null };
     const timeline = document.getElementById(`timeline-${date}`);
     const indicator = document.getElementById(`indicator-${date}`);
-    const blockDragIndicator = block.querySelector('.drag-side-indicator');
+    const blockTimeLabel = block.querySelector('.activity-time');
+    const initialBlockTimeLabel = blockTimeLabel?.textContent || '';
 
     const clearDragVisualState = () => {
       block.classList.remove('drag-pressing', 'drag-armed', 'edge-hint-top', 'edge-hint-bottom', 'resizing-top', 'resizing-bottom', 'dragging');
@@ -6136,23 +6102,16 @@
       durationEl.textContent = `${transportMeta.icon} ${transportMeta.name} · ${formatDurationHours(Math.max(0, endMin - startMin))}`;
     };
 
-    const updateBlockDragIndicator = (startMin, endMin) => {
-      if (!blockDragIndicator) return;
-      const primary = blockDragIndicator.querySelector('.drag-side-primary');
-      const secondary = blockDragIndicator.querySelector('.drag-side-secondary');
+    const updateBlockTimePreview = (startMin, endMin) => {
+      if (!blockTimeLabel) return;
       const snappedStart = snapMinutesToQuarter(startMin);
       const snappedEnd = snapMinutesToQuarter(endMin);
-      // 优化时间段格式，避免内容过长
-      primary.textContent = `${minToTime(snappedStart)}-${minToTime(snappedEnd)}`;
-      secondary.textContent = formatDurationHours(Math.max(15, snappedEnd - snappedStart));
+      blockTimeLabel.textContent = `${minToTime(snappedStart)}-${minToTime(snappedEnd)}`;
     };
 
-    const hideBlockDragIndicator = () => {
-      if (!blockDragIndicator) return;
-      const primary = blockDragIndicator.querySelector('.drag-side-primary');
-      const secondary = blockDragIndicator.querySelector('.drag-side-secondary');
-      primary.textContent = '';
-      secondary.textContent = '';
+    const restoreBlockTimePreview = () => {
+      if (!blockTimeLabel) return;
+      blockTimeLabel.textContent = initialBlockTimeLabel;
     };
 
     const onPointerDown = (e) => {
@@ -6219,7 +6178,7 @@
         setTimelineSpanPosition(block, timeline, newStart, endMin);
         refreshTransportDurationPreview(newStart, endMin);
         updateSnapHapticState(dragSnapHaptic, newStart);
-        updateBlockDragIndicator(newStart, endMin);
+        updateBlockTimePreview(newStart, endMin);
       } else if (dragType === 'bottom') {
         let newEnd = clampTime(endMin + deltaMin);
         if (newEnd <= startMin + 15) newEnd = startMin + 15;
@@ -6228,7 +6187,7 @@
         setTimelineSpanPosition(block, timeline, startMin, newEnd);
         refreshTransportDurationPreview(startMin, newEnd);
         updateSnapHapticState(dragSnapHaptic, newEnd);
-        updateBlockDragIndicator(startMin, newEnd);
+        updateBlockTimePreview(startMin, newEnd);
       } else if (dragType === 'move') {
         const duration = endMin - startMin;
         let newStart = clampTime(Math.min(startMin + deltaMin, 24 * 60 - duration));
@@ -6237,7 +6196,7 @@
         setTimelineSpanPosition(block, timeline, newStart, newStart + duration);
         refreshTransportDurationPreview(newStart, newStart + duration);
         updateSnapHapticState(dragSnapHaptic, newStart);
-        updateBlockDragIndicator(newStart, newStart + duration);
+        updateBlockTimePreview(newStart, newStart + duration);
       }
     };
 
@@ -6249,7 +6208,7 @@
       clearDragArmTimer();
       clearDragVisualState();
       hideTimeIndicator(indicator);
-      hideBlockDragIndicator();
+      restoreBlockTimePreview();
       if (activePointerId != null && block.hasPointerCapture(activePointerId)) {
         block.releasePointerCapture(activePointerId);
       }
