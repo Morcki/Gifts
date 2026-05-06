@@ -465,6 +465,9 @@
       cursor: grabbing;
       scroll-behavior: auto;
     }
+    .day-slider.momentum-slider {
+      scroll-behavior: auto;
+    }
     .day-slider::-webkit-scrollbar { display: none; }
     .day-toggle {
       flex: 0 0 auto;
@@ -637,10 +640,14 @@
       box-sizing: border-box;
       padding: 16px 0 8px 0;
     }
+    .timeline.creating-activity {
+      cursor: crosshair;
+      overscroll-behavior: contain;
+    }
 
     @media (pointer: coarse), (max-width: 640px) {
       .timeline-container {
-        --timeline-height: clamp(960px, 150dvh, 1320px);
+        --timeline-height: clamp(1320px, 210dvh, 1780px);
         border-radius: 16px;
       }
       .night-mask {
@@ -651,7 +658,7 @@
 
     @media ((pointer: coarse) and (max-height: 760px)), ((max-width: 640px) and (max-height: 760px)) {
       .timeline-container {
-        --timeline-height: clamp(900px, 142dvh, 1180px);
+        --timeline-height: clamp(1200px, 195dvh, 1600px);
       }
     }
     .hour-marker {
@@ -968,40 +975,6 @@
     .activity-block.resizing-top,
     .activity-block.resizing-bottom {
       box-shadow: 0 16px 30px rgba(15,23,42,0.20), 0 0 0 2px rgba(255,255,255,0.34);
-    }
-    .activity-edit-time {
-      position: absolute;
-      right: 8px;
-      min-width: 48px;
-      height: 21px;
-      padding: 0 9px;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      border-radius: 999px;
-      background: rgba(0,122,255,0.88);
-      border: 1px solid rgba(255,255,255,0.36);
-      backdrop-filter: blur(14px) saturate(1.2);
-      -webkit-backdrop-filter: blur(14px) saturate(1.2);
-      color: #fff;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0;
-      box-shadow: 0 5px 14px rgba(10,132,255,0.24), 0 1px 2px rgba(15,23,42,0.12);
-      pointer-events: none;
-      z-index: 5;
-    }
-    .activity-edit-time.start {
-      top: 0;
-      transform: translateY(-50%);
-    }
-    .activity-edit-time.end {
-      bottom: 0;
-      transform: translateY(50%);
-    }
-    .activity-block.dragging .activity-edit-time,
-    .activity-block.calendar-touch-armed .activity-edit-time {
-      display: inline-flex;
     }
     @media (pointer: coarse) {
       .activity-block .drag-handle {
@@ -3734,20 +3707,26 @@
       onComplete = null
     } = options;
     stopHorizontalInertia(scrollWrap, frameKey);
-    if (Math.abs(velocity) < 0.02) {
+    let currentVelocity = velocity * 1.35;
+    if (Math.abs(currentVelocity) < 0.035) {
       if (updateState) updateState(scrollWrap);
       if (onComplete) onComplete(scrollWrap);
       return;
     }
-    let currentVelocity = velocity;
+    const maxScrollLeft = Math.max(0, scrollWrap.scrollWidth - scrollWrap.clientWidth);
     let lastTime = performance.now();
     const step = (now) => {
       const dt = Math.min(32, Math.max(1, now - lastTime));
       lastTime = now;
-      scrollWrap.scrollLeft -= currentVelocity * dt;
+      let nextScrollLeft = scrollWrap.scrollLeft - currentVelocity * dt;
+      if (nextScrollLeft < 0 || nextScrollLeft > maxScrollLeft) {
+        nextScrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
+        currentVelocity *= 0.38;
+      }
+      scrollWrap.scrollLeft = nextScrollLeft;
       if (updateState) updateState(scrollWrap);
-      currentVelocity *= 0.92;
-      if (Math.abs(currentVelocity) < 0.02) {
+      currentVelocity *= Math.pow(0.955, dt / 16.67);
+      if (Math.abs(currentVelocity) < 0.012 || scrollWrap.scrollLeft <= 0 || scrollWrap.scrollLeft >= maxScrollLeft) {
         scrollWrap[frameKey] = null;
         if (updateState) updateState(scrollWrap);
         if (onComplete) onComplete(scrollWrap);
@@ -3779,7 +3758,7 @@
       onTap = null,
       suppressDelay = 220,
       dragThresholdMouse = 5,
-      dragThresholdTouch = 8
+      dragThresholdTouch = 2
     } = options;
     if (!strip || strip.dataset[boundKey] === 'true') return;
     strip.dataset[boundKey] = 'true';
@@ -3840,7 +3819,7 @@
       const now = performance.now();
       const dt = Math.max(1, now - lastTime);
       const instantVelocity = (e.clientX - lastX) / dt;
-      velocity = moved ? (velocity * 0.65) + (instantVelocity * 0.35) : instantVelocity;
+      velocity = moved ? (velocity * 0.45) + (instantVelocity * 0.55) : instantVelocity;
       lastX = e.clientX; lastTime = now;
     };
     strip.onpointerup = stopDrag;
@@ -3865,7 +3844,7 @@
       startInertia: (velocity) => startRouteTimelineInertia(scrollWrap, velocity),
       suppressDelay: 220,
       dragThresholdMouse: 6,
-      dragThresholdTouch: 8
+      dragThresholdTouch: 2
     });
   }
 
@@ -3877,7 +3856,7 @@
       attachStripDragScroll(activityScroll, routePanel, {
         updateState: updateRouteTimelineMask,
         dragThresholdMouse: 6,
-        dragThresholdTouch: 8
+        dragThresholdTouch: 2
       });
     }
     attachRouteTimelineDragScroll(routePanel);
@@ -4578,9 +4557,9 @@
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
     const mobileRoute = !compact && isMobileRouteViewport();
-    const width = compact ? 256 : Math.max(mobileRoute ? 340 : 460, dayRoutes.length * (mobileRoute ? 108 : 152));
+    const width = compact ? 256 : (mobileRoute ? 320 : Math.max(460, dayRoutes.length * 152));
     const height = compact ? 70 : (mobileRoute ? 76 : 112);
-    const paddingX = compact ? 20 : (mobileRoute ? 20 : 28);
+    const paddingX = compact ? 20 : (mobileRoute ? 16 : 28);
     const usableWidth = width - paddingX * 2;
     const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 4, -4, 5, -3] : [0, 8, -6, 10, -5]);
     const pointCount = dayRoutes.length + 1;
@@ -4946,14 +4925,21 @@
     let createDragging = false;
     let createStartY = 0;
     let createStartMin = 0;
+    let createPreviewStartMin = 0;
     let createPreviewEndMin = 0;
+    let createAnchorMin = 0;
+    let createDefaultEndMin = 0;
     let createDragThreshold = 5;
     let createPointerId = null;
     let createPointerType = '';
     let createArmed = false;
     let createTouchMoved = false;
     let createArmTimer = null;
+    let createFineTimer = null;
+    let createFineMode = false;
+    let createLastClientY = 0;
     let createPreviewVisible = false;
+    let createGestureLocked = false;
     const createSnapHaptic = { value: null };
     const cp = document.getElementById(`create-preview-${date}`);
     const ind = document.getElementById(`indicator-${date}`);
@@ -4983,13 +4969,81 @@
       createArmTimer = null;
     };
 
+    const clearCreateFineTimer = () => {
+      if (!createFineTimer) return;
+      clearTimeout(createFineTimer);
+      createFineTimer = null;
+    };
+
+    const preventCreateTouchScroll = (event) => {
+      if (createGestureLocked) event.preventDefault();
+    };
+
+    const lockCreateGesture = () => {
+      if (createGestureLocked) return;
+      createGestureLocked = true;
+      timeline.classList.add('creating-activity');
+      document.addEventListener('touchmove', preventCreateTouchScroll, { passive: false });
+    };
+
+    const unlockCreateGesture = () => {
+      if (!createGestureLocked) return;
+      createGestureLocked = false;
+      timeline.classList.remove('creating-activity');
+      document.removeEventListener('touchmove', preventCreateTouchScroll, { passive: false });
+    };
+
+    const getCreateSnapStep = () => createFineMode ? 15 : 60;
+
+    const applyCreatePreviewFromClientY = (clientY) => {
+      const step = getCreateSnapStep();
+      const pointerMin = timelineClientYToMinutes(timeline, clientY);
+      let nextStart = createAnchorMin;
+      let nextEnd = createDefaultEndMin;
+      if (pointerMin < createAnchorMin) {
+        const units = Math.max(1, Math.round((createAnchorMin - pointerMin) / step));
+        nextStart = clampTime(createAnchorMin - units * step);
+        nextEnd = createDefaultEndMin;
+      } else if (pointerMin > createAnchorMin) {
+        const units = Math.max(1, Math.round((pointerMin - createAnchorMin) / step));
+        nextStart = createAnchorMin;
+        nextEnd = clampTime(createAnchorMin + units * step);
+      }
+      const range = clampActivityRange(nextStart, nextEnd);
+      createPreviewStartMin = range.startMin;
+      createPreviewEndMin = range.endMin;
+      updateSnapHapticState(createSnapHaptic, pointerMin);
+      renderCreatePreview(createPreviewStartMin, createPreviewEndMin);
+    };
+
+    const startCreateFineTimer = () => {
+      clearCreateFineTimer();
+      createFineTimer = window.setTimeout(() => {
+        createFineMode = true;
+        triggerHaptic('tick');
+        applyCreatePreviewFromClientY(createLastClientY || createStartY);
+      }, 520);
+    };
+
     const armCreateGesture = () => {
       if (createPointerId == null || createDragging || createTouchMoved) return;
       createArmed = true;
-      if (timeline.setPointerCapture) timeline.setPointerCapture(createPointerId);
+      lockCreateGesture();
+      try {
+        if (timeline.setPointerCapture) timeline.setPointerCapture(createPointerId);
+      } catch {
+        // The browser may release the touch before capture on older mobile engines.
+      }
       triggerHaptic('soft');
-      createPreviewEndMin = clampTime(createStartMin + getDefaultCreateDurationMinutes());
-      renderCreatePreview(createStartMin, createPreviewEndMin);
+      createAnchorMin = snapMinutesToQuarter(createStartMin);
+      const range = clampActivityRange(createAnchorMin, createAnchorMin + getDefaultCreateDurationMinutes());
+      createPreviewStartMin = range.startMin;
+      createPreviewEndMin = range.endMin;
+      createDefaultEndMin = range.endMin;
+      createFineMode = false;
+      createSnapHaptic.value = createAnchorMin;
+      renderCreatePreview(createPreviewStartMin, createPreviewEndMin);
+      startCreateFineTimer();
     };
 
     timeline.addEventListener('pointerdown', (e) => {
@@ -4998,24 +5052,22 @@
           !e.target.classList.contains('hour-line') &&
           !e.target.classList.contains('hour-label')) return;
       createStartMin = snapMinutesToQuarter(timelineClientYToMinutes(timeline, e.clientY));
+      createAnchorMin = createStartMin;
+      createPreviewStartMin = createStartMin;
       createPreviewEndMin = createStartMin;
       createStartY = e.clientY;
+      createLastClientY = e.clientY;
       createDragging = false;
       createPointerType = e.pointerType || '';
-      createArmed = createPointerType !== 'touch' && createPointerType !== 'pen';
+      createArmed = false;
       createTouchMoved = false;
+      createFineMode = false;
       createDragThreshold = getPointerDragThreshold(e, 5, 12);
       createPointerId = e.pointerId;
       createSnapHaptic.value = createStartMin;
       clearCreateArmTimer();
-      if (createArmed) {
-        e.preventDefault();
-        if (timeline.setPointerCapture) timeline.setPointerCapture(e.pointerId);
-        createPreviewEndMin = clampTime(createStartMin + getDefaultCreateDurationMinutes());
-        renderCreatePreview(createStartMin, createPreviewEndMin);
-      } else {
-        createArmTimer = window.setTimeout(armCreateGesture, MOBILE_CREATE_LONG_PRESS_MS);
-      }
+      clearCreateFineTimer();
+      createArmTimer = window.setTimeout(armCreateGesture, MOBILE_CREATE_LONG_PRESS_MS);
       document.addEventListener('pointermove', onPointerMove);
       document.addEventListener('pointerup', onPointerUp);
       document.addEventListener('pointercancel', onPointerUp);
@@ -5023,6 +5075,7 @@
 
     function onPointerMove(e) {
       if (createPointerId !== e.pointerId) return;
+      createLastClientY = e.clientY;
       const deltaY = Math.abs(e.clientY - createStartY);
       if (!createArmed && (createPointerType === 'touch' || createPointerType === 'pen')) {
         if (deltaY > createDragThreshold) {
@@ -5031,18 +5084,14 @@
         }
         return;
       }
+      if (!createArmed) return;
       if (deltaY > createDragThreshold && !createDragging) {
         createDragging = true;
         snapshotDate(date);
       }
       if (!createArmed && !createDragging) return;
       e.preventDefault();
-      const clampedMin = timelineClientYToMinutes(timeline, e.clientY);
-      createPreviewEndMin = clampTime(clampedMin);
-      const snappedEnd = updateSnapHapticState(createSnapHaptic, createPreviewEndMin);
-      const previewStart = Math.min(createStartMin, snappedEnd);
-      const previewEnd = Math.max(createStartMin, snappedEnd);
-      renderCreatePreview(previewStart, previewEnd);
+      applyCreatePreviewFromClientY(e.clientY);
     }
 
     function onPointerUp(e) {
@@ -5050,12 +5099,14 @@
       document.removeEventListener('pointerup', onPointerUp);
       document.removeEventListener('pointercancel', onPointerUp);
       clearCreateArmTimer();
+      clearCreateFineTimer();
       cp.style.display = 'none';
       cp.classList.remove('google-create-preview');
       cp.innerHTML = '';
       delete cp.dataset.startTime;
       delete cp.dataset.endTime;
       createPreviewVisible = false;
+      unlockCreateGesture();
       hideTimeIndicator(ind);
       if (createPointerId != null && timeline.hasPointerCapture && timeline.hasPointerCapture(createPointerId)) {
         timeline.releasePointerCapture(createPointerId);
@@ -5065,23 +5116,20 @@
         createPointerType = '';
         createArmed = false;
         createTouchMoved = false;
+        createFineMode = false;
         createSnapHaptic.value = null;
         return;
       }
-      if (createDragging) {
-        const clampedEnd = snapMinutesToQuarter(createPreviewEndMin);
-        const startTime = minToTime(Math.min(createStartMin, clampedEnd));
-        const endTime = minToTime(Math.max(createStartMin, clampedEnd));
+      if (createArmed) {
+        const startTime = minToTime(createPreviewStartMin);
+        const endTime = minToTime(createPreviewEndMin);
         if (startTime !== endTime) openActivityModal(date, startTime, null, endTime);
-      } else if (createArmed && (createPointerType === 'touch' || createPointerType === 'pen')) {
-        openActivityModal(date, minToTime(createStartMin), null, minToTime(clampTime(createStartMin + getDefaultCreateDurationMinutes())));
-      } else if (createPointerType !== 'touch' && createPointerType !== 'pen' && !createTouchMoved) {
-        openActivityModal(date, minToTime(createStartMin));
       }
       createPointerId = null;
       createPointerType = '';
       createArmed = false;
       createTouchMoved = false;
+      createFineMode = false;
       createSnapHaptic.value = null;
     }
 
@@ -5294,7 +5342,7 @@
 
   function triggerHaptic(pattern = 'tick') {
     if (!navigator.vibrate) return;
-    if (pattern === 'soft') navigator.vibrate(8);
+    if (pattern === 'soft') navigator.vibrate(12);
     else if (pattern === 'success') navigator.vibrate([10, 30, 12]);
     else navigator.vibrate(6);
   }
@@ -6045,13 +6093,40 @@
   }
 
   function stopDaySliderInertia(slider) {
-    stopHorizontalInertia(slider);
+    stopHorizontalInertia(slider, '_daySliderInertiaFrame');
+    slider.classList.remove('momentum-slider');
   }
 
   function startDaySliderInertia(slider, initialVelocity) {
-    startHorizontalInertia(slider, initialVelocity, {
-      updateState: updateDaySliderMask
-    });
+    stopHorizontalInertia(slider, '_daySliderInertiaFrame');
+    const maxScrollLeft = Math.max(0, slider.scrollWidth - slider.clientWidth);
+    let velocity = initialVelocity * 1.35;
+    if (Math.abs(velocity) < 0.035) {
+      updateDaySliderMask(slider);
+      return;
+    }
+    slider.classList.add('momentum-slider');
+    let lastTime = performance.now();
+    const step = (now) => {
+      const dt = Math.min(32, Math.max(1, now - lastTime));
+      lastTime = now;
+      let nextScrollLeft = slider.scrollLeft - velocity * dt;
+      if (nextScrollLeft < 0 || nextScrollLeft > maxScrollLeft) {
+        nextScrollLeft = Math.max(0, Math.min(nextScrollLeft, maxScrollLeft));
+        velocity *= 0.38;
+      }
+      slider.scrollLeft = nextScrollLeft;
+      updateDaySliderMask(slider);
+      velocity *= Math.pow(0.955, dt / 16.67);
+      if (Math.abs(velocity) < 0.012 || slider.scrollLeft <= 0 || slider.scrollLeft >= maxScrollLeft) {
+        slider._daySliderInertiaFrame = null;
+        slider.classList.remove('momentum-slider');
+        updateDaySliderMask(slider);
+        return;
+      }
+      slider._daySliderInertiaFrame = requestAnimationFrame(step);
+    };
+    slider._daySliderInertiaFrame = requestAnimationFrame(step);
   }
 
   function attachDaySliderDragScroll(slider) {
@@ -6060,9 +6135,9 @@
       updateState: updateDaySliderMask,
       stopInertia: () => stopDaySliderInertia(slider),
       startInertia: (velocity) => startDaySliderInertia(slider, velocity),
-      suppressDelay: 280,
+      suppressDelay: 240,
       dragThresholdMouse: 6,
-      dragThresholdTouch: 3,
+      dragThresholdTouch: 2,
       onTap: (e) => {
         const hit = document.elementFromPoint(e.clientX, e.clientY)?.closest('.day-toggle');
         if (hit && slider.contains(hit)) {
@@ -6236,10 +6311,9 @@
       const notePreview = escapeHtml(getActivityPreviewNote(act));
       block.dataset.index = act.origIdx;
       if (isTransport) block.classList.add(`transport-${previewDensity}`);
-      const editTimeHandles = `<div class="activity-edit-time start">${escapeHtml(act.startTime)}</div><div class="activity-edit-time end">${escapeHtml(act.endTime)}</div>`;
       block.innerHTML = isTransport
-        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>${editTimeHandles}`
-        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>${editTimeHandles}`;
+        ? `<div class="activity-content transport-content"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div></div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`
+        : `<div class="activity-content"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`;
       timeline.appendChild(block);
       attachBlockEvents(block, date, act.origIdx);
     });
@@ -6270,8 +6344,6 @@
     const timeline = document.getElementById(`timeline-${date}`);
     const indicator = document.getElementById(`indicator-${date}`);
     const blockTimeLabel = block.querySelector('.activity-time');
-    const editStartLabel = block.querySelector('.activity-edit-time.start');
-    const editEndLabel = block.querySelector('.activity-edit-time.end');
     const initialBlockTimeLabel = blockTimeLabel?.textContent || '';
 
     const clearDragVisualState = () => {
@@ -6293,11 +6365,6 @@
     const armDragPreview = () => {
       if (moved) return;
       block.classList.add('drag-armed');
-    };
-
-    const updateEditTimeLabels = (startMin, endMin) => {
-      if (editStartLabel) editStartLabel.textContent = minToTime(snapMinutesToQuarter(startMin));
-      if (editEndLabel) editEndLabel.textContent = minToTime(snapMinutesToQuarter(endMin));
     };
 
     const captureActiveTouchPointer = () => {
@@ -6332,7 +6399,6 @@
             if (activePointerId == null || moved || touchTapMoved) return;
             touchDragArmed = true;
             block.classList.add('calendar-touch-armed', 'drag-armed');
-            updateEditTimeLabels(previewStartMin, previewEndMin);
             captureActiveTouchPointer();
             triggerHaptic('soft');
           }, TOUCH_EDIT_ARM_DELAY_MS);
@@ -6346,7 +6412,6 @@
             if (activePointerId == null || moved || touchTapMoved) return;
             touchDragArmed = true;
             block.classList.add('calendar-touch-armed', 'edge-hint-top');
-            updateEditTimeLabels(previewStartMin, previewEndMin);
             captureActiveTouchPointer();
             triggerHaptic('soft');
           }, TOUCH_EDIT_ARM_DELAY_MS);
@@ -6359,7 +6424,6 @@
             if (activePointerId == null || moved || touchTapMoved) return;
             touchDragArmed = true;
             block.classList.add('calendar-touch-armed', 'edge-hint-bottom');
-            updateEditTimeLabels(previewStartMin, previewEndMin);
             captureActiveTouchPointer();
             triggerHaptic('soft');
           }, TOUCH_EDIT_ARM_DELAY_MS);
@@ -6420,7 +6484,6 @@
         ? getPointerDragThreshold(e, 4, 3)
         : getPointerDragThreshold(e, 4, 3);
       dragSnapHaptic.value = dragType === 'bottom' ? previewEndMin : previewStartMin;
-      updateEditTimeLabels(previewStartMin, previewEndMin);
       applyPreDragVisualState(e);
       document.addEventListener('pointermove', onPointerMove);
       document.addEventListener('pointerup', onPointerUp);
@@ -6476,7 +6539,6 @@
         refreshTransportDurationPreview(newStart, endMin);
         updateSnapHapticState(dragSnapHaptic, newStart);
         updateBlockTimePreview(newStart, endMin);
-        updateEditTimeLabels(newStart, endMin);
       } else if (dragType === 'bottom') {
         let newEnd = clampTime(endMin + deltaMin);
         if (newEnd <= startMin + 15) newEnd = startMin + 15;
@@ -6486,7 +6548,6 @@
         refreshTransportDurationPreview(startMin, newEnd);
         updateSnapHapticState(dragSnapHaptic, newEnd);
         updateBlockTimePreview(startMin, newEnd);
-        updateEditTimeLabels(startMin, newEnd);
       } else if (dragType === 'move') {
         const duration = endMin - startMin;
         let newStart = clampTime(Math.min(startMin + deltaMin, 24 * 60 - duration));
@@ -6496,7 +6557,6 @@
         refreshTransportDurationPreview(newStart, newStart + duration);
         updateSnapHapticState(dragSnapHaptic, newStart);
         updateBlockTimePreview(newStart, newStart + duration);
-        updateEditTimeLabels(newStart, newStart + duration);
       }
     };
 
