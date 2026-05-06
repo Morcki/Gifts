@@ -1028,7 +1028,7 @@
     .create-preview::after {
       content: attr(data-start-time);
       position: absolute;
-      left: -34px;
+      left: 8px;
       min-width: auto;
       height: 18px;
       padding: 0 4px;
@@ -1049,12 +1049,12 @@
     }
     .create-preview::before {
       top: 0;
-      transform: translate(-100%, -50%);
+      transform: translateY(-50%);
     }
     .create-preview::after {
       content: attr(data-end-time);
       bottom: 0;
-      transform: translate(-100%, 50%);
+      transform: translateY(50%);
     }
     .create-preview.google-create-preview {
       border-left: 4px solid rgba(10,132,255,0.88);
