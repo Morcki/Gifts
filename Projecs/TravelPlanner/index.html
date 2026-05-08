@@ -3660,6 +3660,7 @@
     const timelineScroll = routePanel.querySelector('.route-timeline-scroll');
     if (timelineScroll) {
       timelineScroll.scrollLeft = state.timelineScrollLeft || 0;
+      timelineScroll.dataset.defaultStartApplied = 'true';
       updateRouteTimelineMask(timelineScroll);
     }
     const segmentStrip = routePanel.querySelector('.route-segment-strip');
@@ -3787,6 +3788,26 @@
     const rightPad = Math.max(0, Math.round(scrollWrap.clientWidth / 2 - (renderedWidth - lastCenter)));
     stage.style.setProperty('--timeline-edge-pad-left', `${leftPad}px`);
     stage.style.setProperty('--timeline-edge-pad-right', `${rightPad}px`);
+  }
+
+  function setRouteTimelineDefaultStart(routePanel, startMinute = 8 * 60) {
+    const scrollWrap = routePanel?.querySelector('.route-timeline-scroll');
+    const stage = routePanel?.querySelector('.route-timeline-stage');
+    const svg = routePanel?.querySelector('.route-timeline-svg');
+    if (!scrollWrap || !stage || !svg || scrollWrap.dataset.defaultStartApplied === 'true') return;
+    const viewBoxWidth = svg.viewBox?.baseVal?.width || 0;
+    const renderedWidth = svg.getBoundingClientRect().width;
+    if (!viewBoxWidth || !renderedWidth) return;
+    const { leftPad, rightPad } = getRouteTimelineSvgPadding(svg);
+    const usableWidth = Math.max(1, viewBoxWidth - leftPad - rightPad);
+    const x = leftPad + (usableWidth * clampTime(startMinute)) / (24 * 60);
+    const stageStyle = getComputedStyle(stage);
+    const stagePadLeft = parseFloat(stageStyle.paddingLeft) || 0;
+    const scale = renderedWidth / viewBoxWidth;
+    const maxScrollLeft = Math.max(0, scrollWrap.scrollWidth - scrollWrap.clientWidth);
+    scrollWrap.scrollLeft = Math.max(0, Math.min(maxScrollLeft, stagePadLeft + x * scale - 12));
+    scrollWrap.dataset.defaultStartApplied = 'true';
+    updateRouteTimelineMask(scrollWrap);
   }
 
   function stopHorizontalInertia(scrollWrap, frameKey = '_inertiaFrame') {
@@ -3933,6 +3954,10 @@
     const scrollWrap = routePanel.querySelector('.route-timeline-scroll');
     if (!scrollWrap) return;
     updateRouteTimelineEdgePadding(routePanel);
+    requestAnimationFrame(() => {
+      updateRouteTimelineEdgePadding(routePanel);
+      setRouteTimelineDefaultStart(routePanel);
+    });
     attachStripDragScroll(scrollWrap, routePanel, {
       dragClass: 'dragging-timeline',
       updateState: updateRouteTimelineMask,
@@ -4560,11 +4585,7 @@
 
   function getPlanRouteLabelIndices(totalStops, mobileRoute = false) {
     if (totalStops <= 0) return [];
-    if (totalStops <= (mobileRoute ? 5 : 7)) {
-      return Array.from({ length: totalStops }, (_, index) => index);
-    }
-    const middle = Math.floor((totalStops - 1) / 2);
-    return Array.from(new Set([0, middle, totalStops - 1]));
+    return Array.from({ length: totalStops }, (_, index) => index);
   }
   
   function getRouteSvgStopLabel(location, maxLength = 4) {
@@ -4732,13 +4753,13 @@
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
     const mobileRoute = !compact && isMobileRouteViewport();
-    const mobilePlanWidth = Math.min(340, 280 + Math.max(0, dayRoutes.length - 1) * 26);
-    const width = compact ? 256 : (mobileRoute ? mobilePlanWidth : Math.max(460, dayRoutes.length * 152));
+    const pointCount = dayRoutes.length + 1;
+    const mobilePlanWidth = Math.max(340, pointCount * 70);
+    const width = compact ? 256 : (mobileRoute ? mobilePlanWidth : Math.max(460, pointCount * 126));
     const height = compact ? 70 : (mobileRoute ? 112 : 112);
     const paddingX = compact ? 20 : (mobileRoute ? 46 : 28);
     const usableWidth = width - paddingX * 2;
     const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 8, -7, 9, -6] : [0, 8, -6, 10, -5]);
-    const pointCount = dayRoutes.length + 1;
     const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getPlanRouteLabelIndices(pointCount, mobileRoute));
     const pointLabelMaxLen = compact ? 4 : 7;
     const points = Array.from({ length: pointCount }, (_, index) => {
