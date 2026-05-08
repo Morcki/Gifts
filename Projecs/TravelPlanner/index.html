@@ -1704,6 +1704,15 @@
         margin-bottom: 7px;
         padding-bottom: 3px;
       }
+      .route-timeline-scroll {
+        padding-top: 4px;
+        padding-bottom: 10px;
+      }
+      .route-activity-scroll {
+        margin-left: -3px;
+        margin-right: -3px;
+        padding: 2px 3px 8px;
+      }
       .route-timeline-header {
         margin-bottom: 2px;
       }
@@ -2494,6 +2503,9 @@
   function isMobileRouteViewport() {
     return window.matchMedia?.('(pointer: coarse), (max-width: 640px)').matches || window.innerWidth <= 640;
   }
+  function getDefaultRouteTimelineZoom() {
+    return 2;
+  }
 
   function clampActivityRange(startMin, endMin) {
     const safeStart = clampTime(startMin);
@@ -3073,18 +3085,18 @@
     if (!timeline.segments.length) return '';
     const mobileRoute = isMobileRouteViewport();
     const ZOOM_STEPS = [1, 1.5, 2, 2.5, 3];
-    const currentZoom = dayTimelineZoom.get(date) || 1;
+    const currentZoom = dayTimelineZoom.get(date) || getDefaultRouteTimelineZoom();
     const zoomIdx = ZOOM_STEPS.findIndex(s => Math.abs(s - currentZoom) < 0.01);
     const safeZoomIdx = zoomIdx < 0 ? 0 : zoomIdx;
-    const svgWidth = Math.round((mobileRoute ? 560 : 760) * currentZoom);
     const zoomLabel = currentZoom === 1 ? '1×' : `${currentZoom}×`;
-    const width = mobileRoute ? 420 : 520;
-    const leftPad = mobileRoute ? 14 : 18;
-    const rightPad = mobileRoute ? 14 : 18;
-    const topPad = mobileRoute ? 34 : 36;
-    const laneGap = mobileRoute ? 34 : 34;
+    const baseWidth = mobileRoute ? 420 : 520;
+    const width = Math.round(baseWidth * currentZoom);
+    const leftPad = mobileRoute ? 18 : 22;
+    const rightPad = mobileRoute ? 18 : 22;
+    const topPad = mobileRoute ? 38 : 36;
+    const laneGap = mobileRoute ? 42 : 36;
     const usableWidth = width - leftPad - rightPad;
-    const height = topPad + timeline.laneCount * laneGap + (mobileRoute ? 18 : 14);
+    const height = topPad + timeline.laneCount * laneGap + (mobileRoute ? 24 : 16);
     const ticks = [0, 3, 6, 9, 12, 15, 18, 21, 24];
     const positioned = timeline.segments.map(segment => {
       const x1 = leftPad + (usableWidth * segment.startMin) / (24 * 60);
@@ -3115,7 +3127,7 @@
       </div>
       <div class="route-timeline-scroll">
       <div class="route-timeline-stage">
-      <svg class="route-svg route-timeline-svg" style="width:${svgWidth}px" viewBox="0 0 ${width} ${height}" preserveAspectRatio="xMidYMid meet" role="group" aria-label="当天活动时间轴">
+      <svg class="route-svg route-timeline-svg" style="width:${width}px" viewBox="0 0 ${width} ${height}" data-left-pad="${leftPad}" data-right-pad="${rightPad}" preserveAspectRatio="xMidYMid meet" role="group" aria-label="当天活动时间轴">
         ${ticks.map((hour, i) => {
           const x = leftPad + (usableWidth * (hour * 60)) / (24 * 60);
           const lineY1 = topPad - 10;
@@ -3659,8 +3671,9 @@
   function getRouteTimelineMinutesFromClientX(svg, clientX) {
     const rect = svg.getBoundingClientRect();
     const ratio = rect.width / (svg.viewBox.baseVal.width || 520);
-    const leftPadPx = 18 * ratio;
-    const rightPadPx = 18 * ratio;
+    const { leftPad, rightPad } = getRouteTimelineSvgPadding(svg);
+    const leftPadPx = leftPad * ratio;
+    const rightPadPx = rightPad * ratio;
     const usableWidth = Math.max(1, rect.width - leftPadPx - rightPadPx);
     const rawX = clientX - rect.left - leftPadPx;
     const clampedRatio = Math.max(0, Math.min(1, rawX / usableWidth));
@@ -3671,18 +3684,22 @@
     return clampTime(Math.round(minutes / 15) * 15);
   }
 
+  function getRouteTimelineSvgPadding(svg) {
+    return {
+      leftPad: Number(svg?.dataset?.leftPad) || 18,
+      rightPad: Number(svg?.dataset?.rightPad) || 18
+    };
+  }
+
   function getSoftSnappedTimelineMinutes(minutes) {
-    const quarter = snapMinutesToQuarter(minutes);
-    if (Math.abs(quarter - minutes) <= 5) return quarter;
-    return clampTime(Math.round(minutes / 5) * 5);
+    return snapMinutesToQuarter(minutes);
   }
 
   function updateRouteTimelineSegmentPreview(segmentEl, startMin, endMin) {
     const svg = segmentEl.closest('.route-timeline-svg');
     if (!svg) return;
     const viewBoxWidth = svg.viewBox.baseVal.width || 520;
-    const leftPad = 18;
-    const rightPad = 18;
+    const { leftPad, rightPad } = getRouteTimelineSvgPadding(svg);
     const usableWidth = viewBoxWidth - leftPad - rightPad;
     const line = segmentEl.querySelector('.route-timeline-line');
     const start = segmentEl.querySelector('.route-timeline-endpoint.start');
@@ -3821,7 +3838,7 @@
   }
 
   function startRouteTimelineInertia(scrollWrap, velocity) {
-    startHorizontalInertia(scrollWrap, velocity, {
+    startHorizontalInertia(scrollWrap, velocity * 0.55, {
       frameKey: '_timelineInertiaFrame',
       updateState: updateRouteTimelineMask
     });
@@ -3923,7 +3940,7 @@
       startInertia: (velocity) => startRouteTimelineInertia(scrollWrap, velocity),
       suppressDelay: 220,
       dragThresholdMouse: 6,
-      dragThresholdTouch: 2
+      dragThresholdTouch: 5
     });
   }
 
@@ -3944,7 +3961,7 @@
     const ZOOM_STEPS = [1, 1.5, 2, 2.5, 3];
     routePanel.querySelectorAll('.route-zoom-btn').forEach(btn => {
       btn.onclick = () => {
-        const current = dayTimelineZoom.get(date) || 1;
+        const current = dayTimelineZoom.get(date) || getDefaultRouteTimelineZoom();
         const idx = ZOOM_STEPS.findIndex(s => Math.abs(s - current) < 0.01);
         const safe = idx < 0 ? 0 : idx;
         if (btn.dataset.zoomAction === 'in') {
@@ -4263,7 +4280,7 @@
       if (endpointDragState.armed) e.preventDefault();
       const rawMin = getRouteTimelineMinutesFromClientX(endpointDragState.svg, e.clientX);
       const nextMin = getSoftSnappedTimelineMinutes(rawMin);
-      if (!endpointDragState.moved && Math.abs(e.clientX - endpointDragState.startX) > 4) {
+      if (!endpointDragState.moved && Math.abs(e.clientX - endpointDragState.startX) > endpointDragState.dragThreshold) {
         endpointDragState.moved = true;
         endpointDragState.endpoint.classList.add('dragging');
       }
@@ -4310,6 +4327,7 @@
         lastClientX: e.clientX,
         lastClientY: e.clientY,
         touchPointer,
+        dragThreshold: touchPointer ? 10 : 4,
         armed: !touchPointer,
         armTimer: null,
         moved: false,
@@ -4539,6 +4557,15 @@
     const middle = Math.floor((totalStops - 1) / 2);
     return Array.from(new Set([0, middle, totalStops - 1]));
   }
+
+  function getPlanRouteLabelIndices(totalStops, mobileRoute = false) {
+    if (totalStops <= 0) return [];
+    if (totalStops <= (mobileRoute ? 5 : 7)) {
+      return Array.from({ length: totalStops }, (_, index) => index);
+    }
+    const middle = Math.floor((totalStops - 1) / 2);
+    return Array.from(new Set([0, middle, totalStops - 1]));
+  }
   
   function getRouteSvgStopLabel(location, maxLength = 4) {
     const text = String(location || '').trim();
@@ -4607,18 +4634,18 @@
     const { segments, locations } = buildDayRouteActivitySegments(dayData);
     if (!segments.length || !locations.length) return '';
     const mobileRoute = isMobileRouteViewport();
-    const leftPad = mobileRoute ? 34 : 44;
+    const leftPad = mobileRoute ? 58 : 76;
     const rightPad = 6;
-    const topPad = mobileRoute ? 28 : 24;
-    const bottomPad = mobileRoute ? 36 : 34;
-    const rowGap = locations.length <= 1 ? 0 : (mobileRoute ? 28 : 24);
+    const topPad = mobileRoute ? 42 : 24;
+    const bottomPad = mobileRoute ? 54 : 34;
+    const rowGap = locations.length <= 1 ? 0 : (mobileRoute ? 42 : 24);
     const minTime = Math.min(...segments.map(segment => segment.startMin));
     const maxTime = Math.max(...segments.map(segment => segment.endMin));
     const paddedStart = Math.max(0, minTime - 16);
     const paddedEnd = Math.min(24 * 60, Math.max(maxTime + 16, paddedStart + 60));
     const timeRange = Math.max(60, paddedEnd - paddedStart);
-    const mobileBaseWidth = Math.min(300, 240 + Math.max(0, locations.length - 2) * 24);
-    const width = Math.max(mobileRoute ? mobileBaseWidth : 460, Math.round((timeRange / 60) * (mobileRoute ? 22 : 48)) + leftPad + rightPad);
+    const mobileBaseWidth = Math.min(352, 292 + Math.max(0, locations.length - 2) * 30);
+    const width = Math.max(mobileRoute ? mobileBaseWidth : 460, Math.round((timeRange / 60) * (mobileRoute ? 26 : 48)) + leftPad + rightPad);
     const usableWidth = width - leftPad - rightPad;
     const height = topPad + Math.max(1, locations.length - 1) * rowGap + bottomPad + 10;
     const yForLocation = location => {
@@ -4629,10 +4656,10 @@
     const xForMinute = minute => leftPad + (usableWidth * (minute - paddedStart)) / timeRange;
     const positioned = segments.map(segment => {
       const x1 = xForMinute(segment.startMin);
-      const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 8 : 16));
+      const x2 = Math.max(xForMinute(segment.endMin), x1 + (mobileRoute ? 12 : 16));
       const y1 = yForLocation(segment.startLocation);
       const y2 = yForLocation(segment.endLocation);
-      const labelY = Math.min(height - (mobileRoute ? 10 : 10), Math.max(y1, y2) + (mobileRoute ? 16 : 15));
+      const labelY = Math.min(height - (mobileRoute ? 14 : 10), Math.max(y1, y2) + (mobileRoute ? 22 : 15));
       return {
         ...segment,
         x1,
@@ -4676,24 +4703,24 @@
           return `
             <g>
               <line x1="${x}" y1="10" x2="${x}" y2="${height - 10}" stroke="rgba(148,163,184,0.14)" stroke-width="1"></line>
-              <text x="${x}" y="${mobileRoute ? 10 : 12}" text-anchor="middle" font-size="${mobileRoute ? 8.5 : 10}" fill="#94A3B8">${minToTime(minute)}</text>
+              <text x="${x}" y="${mobileRoute ? 13 : 12}" text-anchor="middle" font-size="${mobileRoute ? 9.5 : 10}" fill="#94A3B8">${minToTime(minute)}</text>
             </g>`;
         }).join('')}
         ${locations.map(location => {
           const y = yForLocation(location);
           return `
-            <text x="${leftPad - 7}" y="${y + 3}" text-anchor="end" font-size="${mobileRoute ? 8.5 : 10}" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="${mobileRoute ? 2.4 : 3}" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, mobileRoute ? 5 : 7))}</text>`;
+            <text x="${leftPad - 8}" y="${y + 4}" text-anchor="end" font-size="${mobileRoute ? 9.5 : 10}" fill="#64748B" stroke="rgba(255,255,255,0.92)" stroke-width="${mobileRoute ? 2.6 : 3}" paint-order="stroke">${escapeHtml(getRouteSvgStopLabel(location, mobileRoute ? 5 : 7))}</text>`;
         }).join('')}
         ${connectors.map(connector => `
-          <path class="route-svg-connector" d="M ${connector.fromX} ${connector.fromY} L ${connector.toX} ${connector.toY}" fill="none" stroke="${connector.color}" stroke-width="${mobileRoute ? 2.1 : 3}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${connector.dash}" opacity="${connector.opacity}"></path>`).join('')}
+          <path class="route-svg-connector" d="M ${connector.fromX} ${connector.fromY} L ${connector.toX} ${connector.toY}" fill="none" stroke="${connector.color}" stroke-width="${mobileRoute ? 2.6 : 3}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${connector.dash}" opacity="${connector.opacity}"></path>`).join('')}
         ${positioned.map(segment => `
           <g class="route-svg-activity" data-activity-index="${segment.activityIndex}">
-            <path class="route-svg-activity-segment" d="M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}" fill="none" stroke="${segment.color}" stroke-width="${mobileRoute ? 4.1 : 6}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${segment.dash}" opacity="0.9"></path>
-            <circle cx="${segment.x1}" cy="${segment.y1}" r="${mobileRoute ? 2.9 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
-            <circle cx="${segment.x2}" cy="${segment.y2}" r="${mobileRoute ? 2.9 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.6 : 2}"></circle>
+            <path class="route-svg-activity-segment" d="M ${segment.x1} ${segment.y1} L ${segment.x2} ${segment.y2}" fill="none" stroke="${segment.color}" stroke-width="${mobileRoute ? 5.2 : 6}" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="${segment.dash}" opacity="0.9"></path>
+            <circle cx="${segment.x1}" cy="${segment.y1}" r="${mobileRoute ? 4.1 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.9 : 2}"></circle>
+            <circle cx="${segment.x2}" cy="${segment.y2}" r="${mobileRoute ? 4.1 : 3.9}" fill="#fff" stroke="${segment.color}" stroke-width="${mobileRoute ? 1.9 : 2}"></circle>
             <g transform="translate(${segment.midX}, ${segment.labelY})" pointer-events="none">
-              <rect x="${mobileRoute ? -13 : -17}" y="${mobileRoute ? -7 : -9}" width="${mobileRoute ? 26 : 34}" height="${mobileRoute ? 14 : 18}" rx="${mobileRoute ? 7 : 9}" fill="rgba(255,255,255,0.96)"></rect>
-              <text text-anchor="middle" dominant-baseline="central" font-size="${mobileRoute ? 8.5 : 10}" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
+              <rect x="${mobileRoute ? -15 : -17}" y="${mobileRoute ? -8 : -9}" width="${mobileRoute ? 30 : 34}" height="${mobileRoute ? 16 : 18}" rx="${mobileRoute ? 8 : 9}" fill="rgba(255,255,255,0.96)"></rect>
+              <text text-anchor="middle" dominant-baseline="central" font-size="${mobileRoute ? 9.5 : 10}" fill="${segment.color}">${escapeHtml(segment.icon)}</text>
             </g>
           </g>`).join('')}
           </svg>
@@ -4705,14 +4732,14 @@
     const dayRoutes = route?.dayRoutes || [];
     if (!dayRoutes.length) return '';
     const mobileRoute = !compact && isMobileRouteViewport();
-    const mobilePlanWidth = Math.min(300, 220 + dayRoutes.length * 28);
+    const mobilePlanWidth = Math.min(340, 280 + Math.max(0, dayRoutes.length - 1) * 26);
     const width = compact ? 256 : (mobileRoute ? mobilePlanWidth : Math.max(460, dayRoutes.length * 152));
-    const height = compact ? 70 : (mobileRoute ? 96 : 112);
-    const paddingX = compact ? 20 : (mobileRoute ? 42 : 28);
+    const height = compact ? 70 : (mobileRoute ? 112 : 112);
+    const paddingX = compact ? 20 : (mobileRoute ? 46 : 28);
     const usableWidth = width - paddingX * 2;
     const wave = compact ? [0, 6, -5, 8] : (mobileRoute ? [0, 8, -7, 9, -6] : [0, 8, -6, 10, -5]);
     const pointCount = dayRoutes.length + 1;
-    const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getRouteSvgLabelIndices(pointCount, false));
+    const labelIndexSet = new Set(compact ? [0, Math.max(0, pointCount - 1)] : getPlanRouteLabelIndices(pointCount, mobileRoute));
     const pointLabelMaxLen = compact ? 4 : 7;
     const points = Array.from({ length: pointCount }, (_, index) => {
       const x = pointCount === 1 ? width / 2 : paddingX + (usableWidth * index) / Math.max(1, pointCount - 1);
