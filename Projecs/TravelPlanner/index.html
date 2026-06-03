@@ -879,6 +879,26 @@
       line-clamp: 3;
       -webkit-line-clamp: 3;
     }
+    .activity-guide-link {
+      align-self: flex-start;
+      margin-top: 5px;
+      min-height: 24px;
+      padding: 0 9px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.24);
+      color: #fff;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 800;
+      cursor: pointer;
+    }
+    .activity-guide-link:active {
+      transform: scale(0.97);
+    }
+    .activity-block.activity-compact .activity-guide-link {
+      display: none;
+    }
     .activity-block:not(.transport-block).activity-compact {
       display: flex;
       align-items: center;
@@ -2278,6 +2298,24 @@
       -webkit-line-clamp: 2;
       -webkit-box-orient: vertical;
     }
+    .route-guide-link {
+      margin-top: 9px;
+      min-height: 30px;
+      padding: 0 12px;
+      border: none;
+      border-radius: 999px;
+      background: rgba(10,132,255,0.12);
+      color: #075985;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform 0.15s ease, background 0.15s ease;
+    }
+    .route-guide-link:active {
+      transform: scale(0.97);
+      background: rgba(10,132,255,0.18);
+    }
     .route-stop-strip {
       display: flex; gap: 8px; overflow-x: auto; padding-bottom: 4px;
       scrollbar-width: none; -ms-overflow-style: none;
@@ -2438,6 +2476,966 @@
       margin-top: 12px; padding: 12px; border-radius: 16px; font-size: 12px;
       color: #8E8E93; background: rgba(245,247,255,0.62);
     }
+
+    .spot-guide-overlay {
+      padding: 0;
+      align-items: stretch;
+      justify-content: center;
+      background: #F3F7FB;
+    }
+    .spot-guide-modal {
+      width: min(100%, 430px);
+      max-width: 430px;
+      height: 100dvh;
+      max-height: 100dvh;
+      margin: 0;
+      border-radius: 0;
+      background: #F3F7FB;
+      box-shadow: none;
+      touch-action: pan-x pan-y pinch-zoom;
+    }
+    .spot-guide-modal::before { display: none; }
+    #spotGuideRoot {
+      display: flex;
+      flex-direction: column;
+      flex: 1 1 auto;
+      min-height: 0;
+      height: 100%;
+    }
+    .spot-guide-header {
+      position: sticky;
+      top: 0;
+      z-index: 8;
+      display: grid;
+      grid-template-columns: 104px minmax(0, 1fr) 104px;
+      align-items: center;
+      gap: 10px;
+      min-height: 48px;
+      padding: calc(6px + env(safe-area-inset-top)) 10px 6px;
+      background: rgba(255,255,255,0.90);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-bottom: 1px solid rgba(148,163,184,0.12);
+    }
+    .spot-guide-header > :first-child {
+      justify-self: start;
+    }
+    .spot-guide-header > :last-child {
+      justify-self: end;
+    }
+    .spot-guide-nav-btn,
+    .spot-guide-icon-btn {
+      border: none;
+      min-width: 38px;
+      height: 38px;
+      border-radius: 19px;
+      background: rgba(255,255,255,0.96);
+      color: #0F172A;
+      font: inherit;
+      font-size: 22px;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 4px 16px rgba(15,23,42,0.10);
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot-guide-nav-btn {
+      display: inline-grid;
+      place-items: center;
+    }
+    .spot-guide-share-icon {
+      position: relative;
+      display: inline-block;
+      width: 20px;
+      height: 22px;
+      color: currentColor;
+      background: linear-gradient(currentColor, currentColor) 50% 2px / 2px 14px no-repeat;
+    }
+    .spot-guide-share-icon::before {
+      content: '';
+      position: absolute;
+      left: 3px;
+      right: 3px;
+      bottom: 1px;
+      height: 13px;
+      border: 2px solid currentColor;
+      border-top: none;
+      border-radius: 0 0 5px 5px;
+      box-sizing: border-box;
+    }
+    .spot-guide-share-icon::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 1px;
+      width: 8px;
+      height: 8px;
+      border-top: 2px solid currentColor;
+      border-left: 2px solid currentColor;
+      transform: translateX(-50%) rotate(45deg);
+      transform-origin: center;
+      box-sizing: border-box;
+    }
+    .spot-guide-icon-btn {
+      min-width: 56px;
+      padding: 0 13px;
+      border: 1px solid rgba(10,132,255,0.32);
+      border-radius: 999px;
+      font-size: 13px;
+      color: #0A84FF;
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 4px 16px rgba(10,132,255,0.10);
+    }
+    .spot-guide-header-actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 8px;
+    }
+    .spot-guide-header-title {
+      min-width: 0;
+      text-align: center;
+    }
+    .spot-guide-header-title strong {
+      display: block;
+      font-size: 17px;
+      color: #0F172A;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .spot-guide-header-title span {
+      display: block;
+      margin-top: 2px;
+      font-size: 11px;
+      color: #64748B;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .spot-guide-body {
+      flex: 1 1 auto;
+      min-height: 0;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      touch-action: pan-x pan-y pinch-zoom;
+      scroll-padding-top: 58px;
+      padding: 0 10px 104px;
+    }
+    .spot-guide-view-body {
+      padding-bottom: calc(22px + env(safe-area-inset-bottom));
+    }
+    .spot-guide-hero {
+      min-height: clamp(260px, 38dvh, 318px);
+      margin: 0 -10px;
+      border-radius: 0;
+      overflow: hidden;
+      position: relative;
+      display: flex;
+      align-items: flex-end;
+      padding: 108px 12px 80px;
+      color: white;
+      background-position: center;
+      background-size: cover;
+      box-shadow: none;
+    }
+    .spot-guide-hero::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(180deg, rgba(15,23,42,0.02) 8%, rgba(15,23,42,0.18) 46%, rgba(15,23,42,0.76) 100%);
+    }
+    .spot-guide-edit-hero {
+      min-height: 214px;
+      margin: 12px 0 0;
+      border-radius: 22px;
+      padding: 0;
+      box-shadow: 0 14px 34px rgba(15,23,42,0.12);
+    }
+    .spot-guide-edit-hero::before {
+      display: none;
+    }
+    .spot-guide-hero-copy {
+      position: relative;
+      z-index: 1;
+      min-width: 0;
+    }
+    .spot-guide-kicker {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 24px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.18);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .spot-guide-title {
+      margin-top: 10px;
+      font-size: 31px;
+      line-height: 1.08;
+      font-weight: 900;
+      letter-spacing: 0;
+      text-shadow: 0 2px 14px rgba(15,23,42,0.34);
+    }
+    .spot-guide-subtitle {
+      margin-top: 7px;
+      font-size: 13px;
+      line-height: 1.4;
+      color: rgba(255,255,255,0.88);
+      text-shadow: 0 1px 8px rgba(15,23,42,0.28);
+    }
+    .spot-guide-chip-row,
+    .spot-guide-tabs {
+      display: flex;
+      gap: 8px;
+    }
+    .spot-guide-chip-row {
+      flex-wrap: wrap;
+      margin-top: 12px;
+    }
+    .spot-guide-chip {
+      display: inline-flex;
+      align-items: center;
+      min-height: 26px;
+      padding: 0 9px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.24);
+      color: rgba(255,255,255,0.96);
+      font-size: 11px;
+      font-weight: 750;
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+    }
+    .spot-guide-chip:nth-child(1) {
+      background: rgba(52,199,89,0.92);
+    }
+    .spot-guide-chip:nth-child(2) {
+      background: rgba(10,132,255,0.88);
+    }
+    .spot-guide-facts {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      position: relative;
+      z-index: 2;
+      gap: 0;
+      margin: -58px 2px 14px;
+      padding: 15px 8px;
+      border-radius: 22px;
+      background: rgba(255,255,255,0.96);
+      border: 1px solid rgba(226,232,240,0.88);
+      box-shadow: 0 14px 34px rgba(15,23,42,0.12);
+    }
+    .spot-guide-fact {
+      min-width: 0;
+      padding: 0 6px;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+      text-align: center;
+    }
+    .spot-guide-fact + .spot-guide-fact {
+      border-left: 1px solid rgba(226,232,240,0.94);
+    }
+    .spot-guide-fact span {
+      display: block;
+      font-size: 11px;
+      font-weight: 750;
+      color: #64748B;
+    }
+    .spot-guide-fact strong {
+      display: block;
+      margin-top: 7px;
+      font-size: 15px;
+      line-height: 1.15;
+      color: #0A84FF;
+      font-weight: 900;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-fact:nth-child(2) strong { color: #16A34A; }
+    .spot-guide-fact:nth-child(3) strong { color: #F97316; }
+    .spot-guide-fact small {
+      display: block;
+      margin-top: 6px;
+      font-size: 10px;
+      line-height: 1.2;
+      color: #94A3B8;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-tabs {
+      position: static;
+      z-index: 3;
+      margin: 0 0 12px;
+      padding: 4px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.94);
+      border: 1px solid rgba(226,232,240,0.88);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 8px 22px rgba(15,23,42,0.06);
+    }
+    .spot-guide-tab {
+      flex: 1;
+      border: none;
+      min-height: 38px;
+      border-radius: 14px;
+      background: transparent;
+      color: #334155;
+      font: inherit;
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .spot-guide-tab.active {
+      color: #0A84FF;
+      background: transparent;
+      box-shadow: inset 0 -3px 0 #0A84FF;
+    }
+    .spot-guide-section {
+      margin-bottom: 12px;
+      padding: 16px;
+      border-radius: 22px;
+      border: 1px solid rgba(226,232,240,0.88);
+      background: rgba(255,255,255,0.96);
+      box-shadow: 0 10px 28px rgba(15,23,42,0.06);
+      scroll-margin-top: 58px;
+    }
+    .spot-guide-section-title {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 13px;
+      color: #0F172A;
+      font-size: 16px;
+      font-weight: 900;
+    }
+    .spot-guide-section-title-main {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      min-width: 0;
+    }
+    .spot-guide-section-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 9px;
+      display: inline-grid;
+      place-items: center;
+      background: rgba(10,132,255,0.12);
+      color: #0A84FF;
+      font-size: 14px;
+      line-height: 1;
+      text-align: center;
+    }
+    .spot-guide-section-icon.camera {
+      position: relative;
+      background: rgba(168,85,247,0.10);
+      color: #9333EA;
+      font-size: 0;
+    }
+    .spot-guide-section-icon.camera::before {
+      content: '';
+      width: 15px;
+      height: 11px;
+      border: 2px solid currentColor;
+      border-radius: 4px;
+      box-sizing: border-box;
+    }
+    .spot-guide-section-icon.camera::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 5px;
+      height: 5px;
+      border: 2px solid currentColor;
+      border-radius: 50%;
+      box-sizing: border-box;
+      transform: translate(-50%, -50%);
+    }
+    .spot-guide-section-title > span {
+      color: #94A3B8;
+      font-size: 11px;
+      font-weight: 800;
+      white-space: nowrap;
+    }
+    .spot-guide-route {
+      display: grid;
+      gap: 9px;
+    }
+    .spot-guide-route-item {
+      display: grid;
+      grid-template-columns: 26px minmax(0, 1fr);
+      gap: 10px;
+      align-items: start;
+      position: relative;
+    }
+    .spot-guide-route-item:not(:last-child)::after {
+      content: '';
+      position: absolute;
+      left: 12px;
+      top: 27px;
+      bottom: -9px;
+      border-left: 2px dashed rgba(10,132,255,0.30);
+    }
+    .spot-guide-route-index {
+      position: relative;
+      z-index: 1;
+      width: 26px;
+      height: 26px;
+      border-radius: 13px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      background: #0A84FF;
+      color: #fff;
+      font-size: 12px;
+      font-weight: 900;
+      box-shadow: 0 7px 16px rgba(10,132,255,0.28);
+    }
+    .spot-guide-route-text,
+    .spot-guide-note-text {
+      font-size: 13px;
+      line-height: 1.55;
+      color: #334155;
+      white-space: pre-line;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-info-lines {
+      display: grid;
+      gap: 7px;
+    }
+    .spot-guide-info-line {
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      min-height: 32px;
+      max-width: 100%;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(15,23,42,0.045);
+      color: #334155;
+      font-size: 12px;
+      line-height: 1.4;
+      font-weight: 750;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-info-line::before {
+      content: '';
+      flex: 0 0 5px;
+      width: 5px;
+      height: 5px;
+      margin-top: 6px;
+      border-radius: 50%;
+      background: rgba(10,132,255,0.55);
+    }
+    .spot-guide-info-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 16px;
+    }
+    .spot-guide-mini-card {
+      min-width: 0;
+      padding: 0;
+      border-radius: 0;
+      background: transparent;
+      border: none;
+    }
+    .spot-guide-mini-card-title {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 10px;
+      color: #0F172A;
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .spot-guide-title-symbol {
+      flex: 0 0 25px;
+      width: 25px;
+      height: 25px;
+      border-radius: 8px;
+      display: inline-grid;
+      place-items: center;
+      background: rgba(22,163,74,0.10);
+      color: #16A34A;
+      font-size: 14px;
+      line-height: 1;
+      font-weight: 900;
+      text-align: center;
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+    }
+    .spot-guide-title-symbol.calendar {
+      position: relative;
+      font-size: 0;
+    }
+    .spot-guide-title-symbol.calendar::before {
+      content: '';
+      width: 15px;
+      height: 15px;
+      border: 2px solid currentColor;
+      border-radius: 4px;
+      box-sizing: border-box;
+      background:
+        linear-gradient(currentColor, currentColor) 3px 5px / 9px 1.5px no-repeat,
+        linear-gradient(currentColor, currentColor) 3px 9px / 9px 1.5px no-repeat,
+        rgba(255,255,255,0.82);
+    }
+    .spot-guide-title-symbol.calendar::after {
+      content: '';
+      position: absolute;
+      left: 8px;
+      top: 5px;
+      width: 9px;
+      height: 3px;
+      border-left: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      box-sizing: border-box;
+    }
+    .spot-guide-title-symbol.viewpoint {
+      position: relative;
+      background: rgba(22,163,74,0.10);
+      color: #16A34A;
+    }
+    .spot-guide-title-symbol.viewpoint::before {
+      content: '';
+      position: absolute;
+      left: 7px;
+      top: 5px;
+      width: 11px;
+      height: 11px;
+      border: 2px solid currentColor;
+      border-radius: 50% 50% 50% 0;
+      transform: rotate(-45deg);
+      background: rgba(255,255,255,0.86);
+    }
+    .spot-guide-title-symbol.viewpoint::after {
+      content: '';
+      position: absolute;
+      left: 11px;
+      top: 9px;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+    .spot-guide-title-symbol.camera {
+      background: rgba(168,85,247,0.10);
+      color: #9333EA;
+    }
+    .spot-guide-ticket-grid {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(226,232,240,0.86);
+    }
+    .spot-guide-ticket-item span {
+      display: block;
+      color: #64748B;
+      font-size: 11px;
+      font-weight: 800;
+    }
+    .spot-guide-ticket-item strong {
+      display: block;
+      margin-top: 5px;
+      color: #0F172A;
+      font-size: 14px;
+      line-height: 1.35;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-photo-grid {
+      display: grid;
+      gap: 8px;
+    }
+    .spot-guide-photo {
+      min-height: 0;
+      padding: 10px 11px;
+      border-radius: 14px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      background: rgba(248,250,252,0.92);
+      border: 1px solid rgba(226,232,240,0.86);
+      color: #0F172A;
+      word-break: break-word;
+      overflow-wrap: anywhere;
+    }
+    .spot-guide-photo-copy {
+      min-width: 0;
+    }
+    .spot-guide-photo-title {
+      color: #0F172A;
+      font-size: 13px;
+      line-height: 1.25;
+      font-weight: 850;
+    }
+    .spot-guide-photo-desc {
+      margin-top: 4px;
+      color: #64748B;
+      font-size: 12px;
+      line-height: 1.45;
+      white-space: pre-line;
+    }
+    .spot-guide-photo-icon {
+      flex: 0 0 22px;
+      width: 22px;
+      height: 22px;
+      border-radius: 8px;
+      position: relative;
+      display: inline-grid;
+      place-items: center;
+      background: rgba(6,182,212,0.11);
+      color: #0891B2;
+      font-size: 0;
+    }
+    .spot-guide-photo-icon::before {
+      content: '';
+      width: 15px;
+      height: 15px;
+      background:
+        linear-gradient(currentColor, currentColor) left top / 6px 2px no-repeat,
+        linear-gradient(currentColor, currentColor) left top / 2px 6px no-repeat,
+        linear-gradient(currentColor, currentColor) right top / 6px 2px no-repeat,
+        linear-gradient(currentColor, currentColor) right top / 2px 6px no-repeat,
+        linear-gradient(currentColor, currentColor) left bottom / 6px 2px no-repeat,
+        linear-gradient(currentColor, currentColor) left bottom / 2px 6px no-repeat,
+        linear-gradient(currentColor, currentColor) right bottom / 6px 2px no-repeat,
+        linear-gradient(currentColor, currentColor) right bottom / 2px 6px no-repeat;
+    }
+    .spot-guide-photo-icon::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: currentColor;
+      transform: translate(-50%, -50%);
+      box-shadow: 0 0 0 4px rgba(8,145,178,0.12);
+    }
+    .spot-guide-photo-strip {
+      display: flex;
+      gap: 8px;
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      overflow-x: auto;
+      overflow-y: hidden;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior-x: contain;
+      scroll-snap-type: x proximity;
+      scrollbar-width: none;
+      box-sizing: border-box;
+      cursor: grab;
+      user-select: none;
+      margin-bottom: 10px;
+      padding: 0 4px 6px;
+      touch-action: pan-y;
+    }
+    .spot-guide-photo-strip::-webkit-scrollbar { display: none; }
+    .spot-guide-photo-strip.dragging-strip {
+      cursor: grabbing;
+      scroll-behavior: auto;
+    }
+    .spot-guide-photo-thumb {
+      flex: 0 0 124px;
+      scroll-snap-align: start;
+      border: none;
+      padding: 0;
+      border-radius: 0;
+      overflow: visible;
+      background: transparent;
+    }
+    .spot-guide-photo-thumb-image {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1.28;
+      border-radius: 12px;
+      background-position: center;
+      background-size: cover;
+      box-shadow: 0 7px 18px rgba(15,23,42,0.10);
+    }
+    .spot-guide-photo-thumb-label {
+      display: block;
+      padding: 5px 0 0;
+      color: #334155;
+      background: transparent;
+      font-size: 12px;
+      line-height: 1.2;
+      font-weight: 800;
+      text-align: center;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .spot-guide-empty {
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(226,232,240,0.44);
+      color: #64748B;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+    .spot-guide-edit-grid {
+      display: grid;
+      gap: 12px;
+    }
+    .spot-guide-edit-grid.two {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    .spot-guide-cover-editor {
+      display: grid;
+      gap: 12px;
+      padding: 12px;
+      border-radius: 18px;
+      background: rgba(255,255,255,0.86);
+      border: 1px solid rgba(148,163,184,0.16);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.72);
+    }
+    .spot-guide-cover-editor-head {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .spot-guide-cover-title {
+      min-width: 0;
+    }
+    .spot-guide-cover-title strong {
+      display: block;
+      color: #0F172A;
+      font-size: 14px;
+      font-weight: 800;
+    }
+    .spot-guide-cover-title span {
+      display: block;
+      margin-top: 3px;
+      color: #64748B;
+      font-size: 11px;
+      line-height: 1.4;
+    }
+    .spot-guide-cover-reset,
+    .spot-guide-cover-link-btn {
+      border: none;
+      min-height: 32px;
+      padding: 0 11px;
+      border-radius: 999px;
+      background: rgba(15,23,42,0.06);
+      color: #475569;
+      font: inherit;
+      font-size: 11px;
+      font-weight: 750;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot-guide-cover-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) auto;
+      gap: 8px;
+      align-items: stretch;
+    }
+    .spot-guide-cover-actions.single {
+      grid-template-columns: minmax(0, 1fr);
+    }
+    .spot-guide-file-label {
+      display: flex;
+      min-width: 0;
+      min-height: 52px;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      gap: 2px;
+      padding: 0 14px;
+      border-radius: 15px;
+      background: rgba(10,132,255,0.11);
+      color: #075985;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot-guide-file-label.primary {
+      background: linear-gradient(135deg, rgba(10,132,255,0.16), rgba(52,199,89,0.12));
+      border: 1px solid rgba(10,132,255,0.18);
+    }
+    .spot-guide-file-label strong {
+      font-size: 13px;
+      font-weight: 800;
+    }
+    .spot-guide-file-label span {
+      color: #0369A1;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .spot-guide-file-label input {
+      display: none;
+    }
+    .spot-guide-cover-link-btn {
+      min-height: 52px;
+      border-radius: 15px;
+      color: #075985;
+      background: rgba(10,132,255,0.08);
+    }
+    .spot-guide-cover-link-btn.active {
+      background: rgba(10,132,255,0.14);
+      color: #075985;
+    }
+    .spot-guide-cover-url-row {
+      display: none;
+    }
+    .spot-guide-cover-url-row.visible {
+      display: block;
+    }
+    .spot-guide-cover-url-row .modern-input {
+      min-height: 44px;
+      padding: 12px;
+      border-radius: 13px;
+      font-size: 14px;
+    }
+    .spot-guide-upload-status {
+      min-height: 17px;
+      color: #64748B;
+      font-size: 11px;
+      line-height: 1.45;
+    }
+    .spot-guide-photo-upload-panel {
+      display: grid;
+      gap: 10px;
+      margin-top: 10px;
+      padding: 12px;
+      border-radius: 16px;
+      background: rgba(248,250,252,0.92);
+      border: 1px solid rgba(148,163,184,0.18);
+    }
+    .spot-guide-photo-upload-panel .spot-guide-file-label {
+      min-height: 48px;
+    }
+    .spot-guide-gallery-editor {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    .spot-guide-image-edit-item {
+      min-width: 0;
+      padding: 6px;
+      border-radius: 15px;
+      background: rgba(241,245,249,0.92);
+      border: 1px solid rgba(148,163,184,0.18);
+    }
+    .spot-guide-image-edit-thumb {
+      display: block;
+      width: 100%;
+      aspect-ratio: 1;
+      border: none;
+      border-radius: 11px;
+      background-position: center;
+      background-size: cover;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot-guide-image-edit-actions {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr);
+      gap: 5px;
+      margin-top: 6px;
+    }
+    .spot-guide-image-edit-actions button {
+      min-height: 28px;
+      border: none;
+      border-radius: 10px;
+      background: rgba(15,23,42,0.06);
+      color: #475569;
+      font: inherit;
+      font-size: 10px;
+      font-weight: 750;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .spot-guide-image-edit-actions .spot-guide-image-remove {
+      color: #B91C1C;
+      background: rgba(239,68,68,0.10);
+    }
+    .spot-guide-image-caption {
+      width: 100%;
+      min-height: 34px;
+      margin-top: 6px;
+      padding: 8px 9px;
+      border-radius: 11px;
+      border: 1px solid rgba(148,163,184,0.18);
+      background: rgba(255,255,255,0.92);
+      color: #0F172A;
+      font: inherit;
+      font-size: 11px;
+      line-height: 1.3;
+      outline: none;
+    }
+    .spot-guide-image-caption:focus {
+      border-color: rgba(10,132,255,0.50);
+      box-shadow: 0 0 0 3px rgba(10,132,255,0.10);
+    }
+    .spot-guide-bottom-bar {
+      position: sticky;
+      bottom: 0;
+      z-index: 7;
+      display: flex;
+      gap: 10px;
+      padding: 12px 10px calc(12px + env(safe-area-inset-bottom));
+      background: rgba(255,255,255,0.88);
+      backdrop-filter: blur(22px);
+      -webkit-backdrop-filter: blur(22px);
+      border-top: 1px solid rgba(148,163,184,0.16);
+    }
+    .spot-guide-bottom-bar .btn {
+      flex: 1;
+      min-height: 48px;
+      border-radius: 14px;
+      font-weight: 850;
+    }
+    @media (max-width: 430px) {
+      .spot-guide-facts {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        margin-top: -50px;
+        padding: 10px 8px;
+      }
+      .spot-guide-fact {
+        padding: 10px 8px;
+      }
+      .spot-guide-fact + .spot-guide-fact {
+        border-left: none;
+      }
+      .spot-guide-fact:nth-child(even) {
+        border-left: 1px solid rgba(226,232,240,0.94);
+      }
+      .spot-guide-fact:nth-child(n+3) {
+        border-top: 1px solid rgba(226,232,240,0.94);
+      }
+      .spot-guide-fact strong {
+        font-size: 16px;
+      }
+    }
+    @media (min-width: 760px) {
+      .spot-guide-overlay {
+        align-items: center;
+        padding: 18px;
+        background: rgba(15,23,42,0.28);
+      }
+      .spot-guide-modal {
+        height: min(900px, calc(100dvh - 36px));
+        max-height: min(900px, calc(100dvh - 36px));
+        border-radius: 28px;
+        box-shadow: 0 28px 70px rgba(15,23,42,0.24);
+      }
+      .spot-guide-facts {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+    }
   </style>
 </head>
 <body>
@@ -2448,6 +3446,8 @@
     compact: 'compact',
     detail: 'detail'
   });
+  const SPOT_GUIDE_FACT_MAX_LENGTH = 20;
+  const DEFAULT_SPOT_GUIDE_COVER = 'assets/guide-cover-west-sichuan.png';
   const EXPORT_SCHEMA = 'travel-plans-export';
   const EXPORT_VERSION = 1;
   let plans = [];
@@ -2652,6 +3652,52 @@
     };
   }
 
+  function normalizeGuideList(value) {
+    const source = Array.isArray(value)
+      ? value
+      : String(value || '').split(/\r?\n|[;；]/);
+    return source
+      .map(item => String(item || '').trim())
+      .filter(Boolean);
+  }
+
+  function normalizeGuideImages(value) {
+    const source = Array.isArray(value)
+      ? value
+      : String(value || '').split(/\r?\n/);
+    return source
+      .map(item => String(item || '').trim())
+      .filter(Boolean);
+  }
+
+  function normalizeGuideImageCaptions(value) {
+    const source = Array.isArray(value)
+      ? value
+      : String(value || '').split(/\r?\n/);
+    return source.map(item => String(item || '').trim());
+  }
+
+  function normalizeGuideFactText(value) {
+    return String(value || '').trim().slice(0, SPOT_GUIDE_FACT_MAX_LENGTH);
+  }
+
+  function normalizeSpotGuide(guide = {}) {
+    return {
+      coverImage: String(guide?.coverImage || '').trim(),
+      images: normalizeGuideImages(guide?.images),
+      imageCaptions: normalizeGuideImageCaptions(guide?.imageCaptions),
+      ticket: normalizeGuideFactText(guide?.ticket),
+      openHours: normalizeGuideFactText(guide?.openHours || guide?.hours),
+      altitude: normalizeGuideFactText(guide?.altitude),
+      duration: normalizeGuideFactText(guide?.duration),
+      bestTime: normalizeGuideList(guide?.bestTime),
+      bestViewpoint: String(guide?.bestViewpoint || '').trim(),
+      route: normalizeGuideList(guide?.route),
+      photoSpots: normalizeGuideList(guide?.photoSpots),
+      notes: String(guide?.notes || '').trim()
+    };
+  }
+
   function normalizeTagCollection(tags) {
     const defaultTagMap = new Map(defaultTags.map(tag => [tag.id, { ...tag }]));
     const customTags = [];
@@ -2684,7 +3730,8 @@
       endLocation: isTransport ? String(activity?.endLocation || '').trim() : '',
       transportMode: isTransport ? transportMode : '',
       description: String(activity?.description || activity?.note || '').trim(),
-      tagId
+      tagId,
+      guide: normalizeSpotGuide(activity?.guide)
     };
   }
 
@@ -3533,18 +4580,39 @@
       </div>`;
   }
 
-  function buildRouteAttractionCards(stops, activities = []) {
+  function buildRouteAttractionCards(stops, activities = [], tags = []) {
     const activityList = Array.isArray(activities) ? activities : [];
+    const tagList = Array.isArray(tags) ? tags : [];
     return (stops || [])
-      .map((stop, stopIndex) => ({
-        stop,
-        stopIndex,
-        activityIndex: getRouteStopPrimaryActivityIndex(stop),
-        description: String(activityList[getRouteStopPrimaryActivityIndex(stop)]?.description || '').trim(),
-        sortStartMin: timeToMin(isValidTimeString(stop?.startTime) ? stop.startTime : (isValidTimeString(stop?.endTime) ? stop.endTime : '00:00')),
-        sortEndMin: timeToMin(isValidTimeString(stop?.endTime) ? stop.endTime : (isValidTimeString(stop?.startTime) ? stop.startTime : '00:00'))
-      }))
-      .filter(item => item.stop?.stayRefs?.length && item.activityIndex != null);
+      .flatMap((stop, stopIndex) => {
+        const refs = (stop?.stayRefs || [])
+          .filter(ref => ref?.activityIndex != null)
+          .filter((ref, index, list) => list.findIndex(item => item.activityIndex === ref.activityIndex) === index);
+        return refs.map(ref => {
+          const activityIndex = ref.activityIndex;
+          const activity = activityIndex != null ? activityList[activityIndex] : null;
+          const tag = tagList.find(item => item.id === activity?.tagId);
+          return {
+            stop,
+            stopIndex,
+            activityIndex,
+            activity,
+            title: getActivityDisplayTitle(activity),
+            location: getActivityLocation(activity) || stop.location || '',
+            startTime: activity?.startTime || stop.startTime || '',
+            endTime: activity?.endTime || stop.endTime || '',
+            tagId: activity?.tagId || stop.tagId || '',
+            tagIcon: tag?.icon || stop.tagIcon || '📍',
+            tagColor: tag?.color || stop.tagColor || '#0A84FF',
+            tagName: tag?.name || stop.tagName || '景点',
+            description: String(activity?.description || '').trim(),
+            isSight: activity?.tagId === 'sight',
+            sortStartMin: timeToMin(isValidTimeString(activity?.startTime) ? activity.startTime : (isValidTimeString(stop?.startTime) ? stop.startTime : '00:00')),
+            sortEndMin: timeToMin(isValidTimeString(activity?.endTime) ? activity.endTime : (isValidTimeString(stop?.endTime) ? stop.endTime : '00:00'))
+          };
+        });
+      })
+      .filter(item => item.activityIndex != null);
   }
 
   function buildRouteContentCards(segments, attractionCards) {
@@ -3572,18 +4640,533 @@
 
   function renderRouteAttractionCard(item) {
     const { stop, stopIndex, activityIndex } = item;
-    const color = stop.tagColor || '#0A84FF';
-    const icon = stop.tagIcon || '📍';
-    const mode = stop.tagName || '景点';
+    const color = item.tagColor || '#0A84FF';
+    const icon = item.tagIcon || '📍';
+    const mode = item.tagName || '景点';
     const style = ` style="background:${toAlphaColor(color, 0.10)}; border-color:${toAlphaColor(color, 0.24)};"`;
     return `
-      <div class="route-attraction-card" data-stop-index="${stopIndex}" data-activity-index="${activityIndex}" tabindex="0" role="button" aria-label="查看 ${escapeHtml(stop.title || stop.location)}"${style}>
+      <div class="route-attraction-card" data-stop-index="${stopIndex}" data-activity-index="${activityIndex}" tabindex="0" role="button" aria-label="查看 ${escapeHtml(item.title || item.location)}"${style}>
         <div class="route-attraction-mode" style="color:${color};">${escapeHtml(icon)} ${escapeHtml(mode)}</div>
-        <div class="route-attraction-title">${escapeHtml(stop.title || stop.location)}</div>
-        <div class="route-attraction-time">${escapeHtml(stop.startTime)} → ${escapeHtml(stop.endTime)}</div>
-        <div class="route-attraction-note">${escapeHtml(stop.location)}</div>
+        <div class="route-attraction-title">${escapeHtml(item.title || item.location)}</div>
+        <div class="route-attraction-time">${escapeHtml(item.startTime)} → ${escapeHtml(item.endTime)}</div>
+        <div class="route-attraction-note">${escapeHtml(item.location || stop.location)}</div>
         ${item.description ? `<div class="route-attraction-description">${escapeHtml(item.description)}</div>` : ''}
+        ${item.isSight ? `<button class="route-guide-link" type="button" data-activity-index="${activityIndex}">攻略</button>` : ''}
       </div>`;
+  }
+
+  function getGuideCoverUrl(guide) {
+    return getGuideImageUrl(guide?.coverImage, DEFAULT_SPOT_GUIDE_COVER);
+  }
+
+  function getGuideImageUrl(value, fallback = '') {
+    const url = String(value || '').trim();
+    if (!url) return fallback;
+    if (/^(https?:|data:image\/|assets\/|\.\/|\.\.\/)/i.test(url)) return url;
+    return fallback;
+  }
+
+  function getGuideCssImageUrl(value, fallback = DEFAULT_SPOT_GUIDE_COVER) {
+    return getGuideImageUrl(value, fallback)
+      .replace(/\\/g, '/')
+      .replace(/'/g, '%27')
+      .replace(/"/g, '%22')
+      .replace(/\)/g, '%29');
+  }
+
+  function getGuideCoverStyle(guide) {
+    const url = getGuideCssImageUrl(guide?.coverImage);
+    return `style="background-image: linear-gradient(180deg, rgba(15,23,42,0.08), rgba(15,23,42,0.72)), url('${escapeHtml(url)}');"`;
+  }
+
+  function setGuideHeroBackground(element, imageUrl) {
+    if (!element) return;
+    const url = getGuideCssImageUrl(imageUrl);
+    element.style.backgroundImage = `linear-gradient(180deg, rgba(15,23,42,0.08), rgba(15,23,42,0.72)), url("${url}")`;
+  }
+
+  function getGuideThumbStyle(imageUrl) {
+    const url = getGuideCssImageUrl(imageUrl, '');
+    return url ? `style="background-image: url('${escapeHtml(url)}');"` : '';
+  }
+
+  function getGuidePhotoImages(guide) {
+    const normalized = normalizeSpotGuide(guide);
+    const images = normalizeGuideImages(normalized.images)
+      .map(image => getGuideImageUrl(image, ''))
+      .filter(Boolean);
+    const unique = [];
+    images.forEach(image => {
+      if (!unique.includes(image)) unique.push(image);
+    });
+    return unique;
+  }
+
+  function renderGuideImageEditorItems(guide) {
+    const images = normalizeGuideImages(guide?.images)
+      .map(image => getGuideImageUrl(image, ''))
+      .filter(Boolean);
+    const captions = normalizeGuideImageCaptions(guide?.imageCaptions);
+    const fallbackCaptions = normalizeGuideList(guide?.photoSpots);
+    if (!images.length) return `<div class="spot-guide-empty">还没有相册图片，可以一次选择多张本地图片补充。</div>`;
+    return images.map((image, index) => `
+      <div class="spot-guide-image-edit-item">
+        <div class="spot-guide-image-edit-thumb" data-guide-image-index="${index}" aria-hidden="true" ${getGuideThumbStyle(image)}></div>
+        <input class="spot-guide-image-caption" data-guide-image-index="${index}" value="${escapeHtml(captions[index] || (fallbackCaptions[index] ? getGuidePhotoShortLabel(fallbackCaptions[index], index) : ''))}" placeholder="图片下方短标题">
+        <div class="spot-guide-image-edit-actions">
+          <button type="button" class="spot-guide-image-remove" data-guide-image-index="${index}">删除照片</button>
+        </div>
+      </div>`).join('');
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ''));
+      reader.onerror = () => reject(reader.error);
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function loadImageFromDataUrl(dataUrl) {
+    return new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = reject;
+      image.src = dataUrl;
+    });
+  }
+
+  async function compressGuideCoverFile(file) {
+    if (!file || !file.type?.startsWith('image/')) throw new Error('请选择图片文件');
+    const sourceDataUrl = await readFileAsDataUrl(file);
+    const image = await loadImageFromDataUrl(sourceDataUrl);
+    const maxWidth = 1440;
+    const maxHeight = 900;
+    const ratio = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+    const width = Math.max(1, Math.round(image.naturalWidth * ratio));
+    const height = Math.max(1, Math.round(image.naturalHeight * ratio));
+    const canvas = document.createElement('canvas');
+    canvas.width = width;
+    canvas.height = height;
+    const context = canvas.getContext('2d');
+    if (!context) return sourceDataUrl;
+    context.drawImage(image, 0, 0, width, height);
+    return canvas.toDataURL('image/jpeg', 0.84);
+  }
+
+  function guideTextareaValue(list) {
+    return normalizeGuideList(list).join('\n');
+  }
+
+  function getGuideText(value, fallback = '待补充') {
+    const text = String(value || '').trim();
+    return text || fallback;
+  }
+
+  function renderGuideFact(label, value, fallback = '待补充', detail = '') {
+    return `<div class="spot-guide-fact"><span>${escapeHtml(label)}</span><strong>${escapeHtml(getGuideText(value, fallback))}</strong>${detail ? `<small>${escapeHtml(detail)}</small>` : ''}</div>`;
+  }
+
+  function renderGuideInfoLines(items, fallback = '待补充') {
+    const list = normalizeGuideList(items);
+    if (!list.length) return `<div class="spot-guide-empty">${escapeHtml(fallback)}</div>`;
+    return `<div class="spot-guide-info-lines">${list.map(item => `<div class="spot-guide-info-line">${escapeHtml(item)}</div>`).join('')}</div>`;
+  }
+
+  function renderGuideRoute(items) {
+    const list = normalizeGuideList(items);
+    if (!list.length) return `<div class="spot-guide-empty">还没有路线安排，可以按游览顺序逐行补充。</div>`;
+    return `<div class="spot-guide-route">${list.map((item, index) => `
+      <div class="spot-guide-route-item">
+        <span class="spot-guide-route-index">${index + 1}</span>
+        <div class="spot-guide-route-text">${escapeHtml(item)}</div>
+      </div>`).join('')}</div>`;
+  }
+
+  function getGuidePhotoShortLabel(value, index) {
+    const text = String(value || '').trim();
+    if (!text) return `照片 ${index + 1}`;
+    const label = text.split(/[，,。；;｜|:：\-—]/)[0].trim();
+    return label || text;
+  }
+
+  function renderGuidePhotos(items) {
+    const list = normalizeGuideList(items);
+    if (!list.length) return `<div class="spot-guide-empty">还没有拍照点，可以记录机位、构图和适合的时间。</div>`;
+    return `<div class="spot-guide-photo-grid">${list.map((item, index) => `
+      <div class="spot-guide-photo">
+        <span class="spot-guide-photo-icon" aria-hidden="true"></span>
+        <div class="spot-guide-photo-copy">
+          <div class="spot-guide-photo-title">${escapeHtml(getGuidePhotoShortLabel(item, index))}</div>
+          <div class="spot-guide-photo-desc">${escapeHtml(item)}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  }
+
+  function renderGuidePhotoGallery(guide) {
+    const images = getGuidePhotoImages(guide);
+    const imageCaptions = normalizeGuideImageCaptions(guide?.imageCaptions);
+    const photoSpots = normalizeGuideList(guide?.photoSpots);
+    const labels = images.map((_, index) => imageCaptions[index] || getGuidePhotoShortLabel(photoSpots[index], index));
+    const photoCards = images.length ? images.map((_, index) => photoSpots[index] || imageCaptions[index] || '').filter(Boolean) : photoSpots;
+    const visibleImages = images;
+    const imageStrip = !visibleImages.length
+      ? ''
+      : `<div class="spot-guide-photo-strip">${visibleImages.map((image, index) => `
+          <div class="spot-guide-photo-thumb" aria-label="第 ${index + 1} 张拍照点图片">
+            <span class="spot-guide-photo-thumb-image" ${getGuideThumbStyle(image)}></span>
+            <span class="spot-guide-photo-thumb-label">${escapeHtml(labels[index] || `照片 ${index + 1}`)}</span>
+          </div>`).join('')}</div>`;
+    return `${imageStrip}${renderGuidePhotos(photoCards)}`;
+  }
+
+  function renderSpotGuideView(date, activity, guide) {
+    const title = getActivityDisplayTitle(activity);
+    const location = getActivityLocation(activity) || activity.location || title;
+    const description = String(activity.description || '').trim();
+    const coverImage = getGuideCoverUrl(guide);
+    return `
+      <div class="spot-guide-header">
+        <button class="spot-guide-nav-btn" type="button" id="spotGuideBack" aria-label="返回">‹</button>
+        <div class="spot-guide-header-title">
+          <strong>景点攻略</strong>
+        </div>
+        <div class="spot-guide-header-actions">
+          <button class="spot-guide-nav-btn" type="button" id="spotGuideShare" aria-label="分享"><span class="spot-guide-share-icon" aria-hidden="true"></span></button>
+          <button class="spot-guide-icon-btn" type="button" id="spotGuideTopEdit">编辑</button>
+        </div>
+      </div>
+      <div class="spot-guide-body spot-guide-view-body">
+        <section class="spot-guide-hero" id="spotGuideViewHero" ${getGuideCoverStyle({ coverImage })}>
+          <div class="spot-guide-hero-copy">
+            <div class="spot-guide-title">${escapeHtml(title)}</div>
+            <div class="spot-guide-subtitle">⌖ ${escapeHtml(location)}</div>
+            <div class="spot-guide-chip-row">
+              <span class="spot-guide-chip">自然风光</span>
+              <span class="spot-guide-chip">旅行攻略</span>
+              <span class="spot-guide-chip">${escapeHtml(getGuideText(guide.altitude, '海拔待补充'))}</span>
+            </div>
+          </div>
+        </section>
+        <div class="spot-guide-facts">
+          ${renderGuideFact('门票参考', guide.ticket, '待补充', '费用记录')}
+          ${renderGuideFact('开放时间', guide.openHours, '待补充', '入园节奏')}
+          ${renderGuideFact('海拔高度', guide.altitude, '待补充', '高原地区')}
+          ${renderGuideFact('建议游玩', guide.duration, '待补充', '轻松游览')}
+        </div>
+        <div class="spot-guide-tabs" role="tablist" aria-label="景点攻略分区">
+          <button class="spot-guide-tab active" type="button" data-target="guideRoute">攻略</button>
+          <button class="spot-guide-tab" type="button" data-target="guideInfo">路线</button>
+          <button class="spot-guide-tab" type="button" data-target="guidePhoto">拍照</button>
+          <button class="spot-guide-tab" type="button" data-target="guideNotes">备注</button>
+        </div>
+        <section class="spot-guide-section" id="guideRoute">
+          <div class="spot-guide-section-title"><div class="spot-guide-section-title-main"><span class="spot-guide-section-icon">↝</span>推荐游览路线</div><span>${escapeHtml(getGuideText(guide.duration, '按游览顺序'))}</span></div>
+          ${renderGuideRoute(guide.route)}
+        </section>
+        <section class="spot-guide-section" id="guideInfo">
+          <div class="spot-guide-section-title"><div class="spot-guide-section-title-main"><span class="spot-guide-section-icon">⌁</span>路线与信息</div><span>关键参考</span></div>
+          <div class="spot-guide-info-grid">
+            <div class="spot-guide-mini-card">
+              <div class="spot-guide-mini-card-title"><span class="spot-guide-title-symbol calendar" aria-hidden="true"></span>最佳观赏时间</div>
+              ${renderGuideInfoLines(guide.bestTime, '还没有最佳观赏时间。')}
+            </div>
+            <div class="spot-guide-mini-card">
+              <div class="spot-guide-mini-card-title"><span class="spot-guide-title-symbol viewpoint" aria-hidden="true"></span>最佳观赏点</div>
+              ${renderGuideInfoLines(guide.bestViewpoint, '还没有记录最佳观赏点。')}
+            </div>
+          </div>
+          <div class="spot-guide-ticket-grid">
+            <div class="spot-guide-ticket-item"><span>门票</span><strong>${escapeHtml(getGuideText(guide.ticket, '待补充'))}</strong></div>
+            <div class="spot-guide-ticket-item"><span>开放时间</span><strong>${escapeHtml(getGuideText(guide.openHours, '待补充'))}</strong></div>
+          </div>
+        </section>
+        <section class="spot-guide-section" id="guidePhoto">
+          <div class="spot-guide-section-title"><div class="spot-guide-section-title-main"><span class="spot-guide-section-icon camera" aria-hidden="true"></span>网红拍照点</div></div>
+          ${renderGuidePhotoGallery(guide)}
+        </section>
+        <section class="spot-guide-section" id="guideNotes">
+          <div class="spot-guide-section-title"><div class="spot-guide-section-title-main"><span class="spot-guide-section-icon">✎</span>我的备注</div><span>${escapeHtml(formatPlanDateSummary(date))}</span></div>
+          <div class="spot-guide-note-text">${escapeHtml(getGuideText(guide.notes || description, '还没有备注内容。'))}</div>
+        </section>
+      </div>`;
+  }
+
+  function renderSpotGuideEdit(date, activity, guide) {
+    const title = getActivityDisplayTitle(activity);
+    const hasLinkCover = Boolean(guide.coverImage && !/^data:image\//i.test(guide.coverImage));
+    return `
+      <div class="spot-guide-header">
+        <button class="spot-guide-nav-btn" type="button" id="spotGuideCancelEdit" aria-label="取消">‹</button>
+        <div class="spot-guide-header-title">
+          <strong>编辑攻略</strong>
+          <span>${escapeHtml(title)}</span>
+        </div>
+        <button class="spot-guide-icon-btn" type="button" id="spotGuideSaveTop">保存</button>
+      </div>
+      <div class="spot-guide-body">
+        <section class="spot-guide-hero spot-guide-edit-hero" id="spotGuideEditHero" aria-label="封面预览" ${getGuideCoverStyle(guide)}></section>
+        <div class="spot-guide-edit-grid" style="margin-top:14px;">
+          <div class="spot-guide-cover-editor">
+            <div class="spot-guide-cover-editor-head">
+              <div class="spot-guide-cover-title">
+                <strong>封面图片</strong>
+                <span>仅控制顶部封面显示，可上传本地图片或使用线上图片链接。</span>
+              </div>
+              <button class="spot-guide-cover-reset" type="button" id="guideCoverReset">默认</button>
+            </div>
+            <input type="hidden" id="guideCoverImage" value="${escapeHtml(guide.coverImage)}">
+            <div class="spot-guide-cover-actions">
+              <label class="spot-guide-file-label primary"><strong>上传封面图片</strong><span>自动压缩并替换顶部封面</span><input id="guideCoverFile" type="file" accept="image/*"></label>
+              <button class="spot-guide-cover-link-btn${hasLinkCover ? ' active' : ''}" type="button" id="guideCoverLinkToggle">图片链接</button>
+            </div>
+            <div class="spot-guide-cover-url-row${hasLinkCover ? ' visible' : ''}" id="guideCoverUrlRow">
+              <input class="modern-input" id="guideCoverUrlInput" value="${hasLinkCover ? escapeHtml(guide.coverImage) : ''}" placeholder="https://...">
+            </div>
+            <div class="spot-guide-upload-status" id="guideCoverUploadStatus">未设置时使用默认川西山谷封面。</div>
+          </div>
+          <div class="spot-guide-edit-grid two">
+            <div class="field-group"><label>门票</label><input class="modern-input" id="guideTicket" maxlength="${SPOT_GUIDE_FACT_MAX_LENGTH}" value="${escapeHtml(guide.ticket)}" placeholder="例如：150元"></div>
+            <div class="field-group"><label>开放时间</label><input class="modern-input" id="guideOpenHours" maxlength="${SPOT_GUIDE_FACT_MAX_LENGTH}" value="${escapeHtml(guide.openHours)}" placeholder="例如：07:30-17:30"></div>
+          </div>
+          <div class="spot-guide-edit-grid two">
+            <div class="field-group"><label>海拔</label><input class="modern-input" id="guideAltitude" maxlength="${SPOT_GUIDE_FACT_MAX_LENGTH}" value="${escapeHtml(guide.altitude)}" placeholder="例如：3840m"></div>
+            <div class="field-group"><label>建议时长</label><input class="modern-input" id="guideDuration" maxlength="${SPOT_GUIDE_FACT_MAX_LENGTH}" value="${escapeHtml(guide.duration)}" placeholder="例如：3-4小时"></div>
+          </div>
+          <div class="field-group"><label>最佳观赏时间（一行一个）</label><textarea class="modern-input" id="guideBestTime" rows="3" placeholder="例如：上午 9:00-11:00">${escapeHtml(guideTextareaValue(guide.bestTime))}</textarea></div>
+          <div class="field-group"><label>最佳观赏点</label><textarea class="modern-input" id="guideBestViewpoint" rows="3" placeholder="例如：湖边栈道靠右侧机位">${escapeHtml(guide.bestViewpoint)}</textarea></div>
+          <div class="field-group"><label>推荐路线（一行一个节点）</label><textarea class="modern-input" id="guideRoute" rows="5" placeholder="入口\n观景台\n湖边栈道">${escapeHtml(guideTextareaValue(guide.route))}</textarea></div>
+          <div class="field-group">
+            <label>详细地点 + 机位 + 注意点（一行一个）</label>
+            <textarea class="modern-input" id="guidePhotoSpots" rows="4" placeholder="例如：布达拉峰倒影，湖边栈道正对雪山，建议上午顺光">${escapeHtml(guideTextareaValue(guide.photoSpots))}</textarea>
+            <div class="spot-guide-photo-upload-panel">
+              <div class="spot-guide-cover-title">
+                <strong>拍照点图片</strong>
+                <span>上传后会在攻略页“网红拍照点”里展示。</span>
+              </div>
+              <label class="spot-guide-file-label primary"><strong>上传拍照点图片</strong><span>支持多选，短标题可在缩略图下方编辑</span><input id="guideGalleryFiles" type="file" accept="image/*" multiple></label>
+              <input type="hidden" id="guideImagesData" value="${escapeHtml(JSON.stringify(normalizeGuideImages(guide.images)))}">
+              <input type="hidden" id="guideImageCaptionsData" value="${escapeHtml(JSON.stringify(normalizeGuideImageCaptions(guide.imageCaptions)))}">
+              <div class="spot-guide-gallery-editor" id="guideGalleryEditor">${renderGuideImageEditorItems(guide)}</div>
+              <div class="spot-guide-upload-status" id="guideGalleryUploadStatus">这些图片只用于“网红拍照点”横向展示，不会替换顶部封面。</div>
+            </div>
+          </div>
+          <div class="field-group"><label>备注</label><textarea class="modern-input" id="guideNotes" rows="5" placeholder="预约、交通、避坑、装备等">${escapeHtml(guide.notes)}</textarea></div>
+        </div>
+      </div>
+      <div class="spot-guide-bottom-bar">
+        <button class="btn secondary" type="button" id="spotGuideCancelBottom">取消</button>
+        <button class="btn" type="button" id="spotGuideSaveBottom">保存攻略</button>
+      </div>`;
+  }
+
+  function collectSpotGuideDraft() {
+    return normalizeSpotGuide({
+      coverImage: document.getElementById('guideCoverImage')?.value || '',
+      ticket: document.getElementById('guideTicket')?.value || '',
+      openHours: document.getElementById('guideOpenHours')?.value || '',
+      altitude: document.getElementById('guideAltitude')?.value || '',
+      duration: document.getElementById('guideDuration')?.value || '',
+      bestTime: document.getElementById('guideBestTime')?.value || '',
+      bestViewpoint: document.getElementById('guideBestViewpoint')?.value || '',
+      route: document.getElementById('guideRoute')?.value || '',
+      photoSpots: document.getElementById('guidePhotoSpots')?.value || '',
+      notes: document.getElementById('guideNotes')?.value || '',
+      images: safeParseJson(document.getElementById('guideImagesData')?.value || '[]', []),
+      imageCaptions: safeParseJson(document.getElementById('guideImageCaptionsData')?.value || '[]', [])
+    });
+  }
+
+  function openSpotGuidePage(date, activityIndex, startInEdit = false) {
+    const plan = getPlan(currentPlanId);
+    const dayData = plan?.days?.[date];
+    const activity = dayData?.activities?.[activityIndex];
+    if (!activity || activity.tagId !== 'sight') return;
+    let editing = startInEdit;
+    const html = `<div class="modal-overlay spot-guide-overlay" id="modal"><div class="modal spot-guide-modal" role="dialog" aria-modal="true" aria-label="景点攻略"><div id="spotGuideRoot"></div></div></div>`;
+    const { modal: overlay, close: closeModal } = mountModal(html);
+    const root = document.getElementById('spotGuideRoot');
+    const render = () => {
+      const guide = normalizeSpotGuide(activity.guide);
+      root.innerHTML = editing
+        ? renderSpotGuideEdit(date, activity, guide)
+        : renderSpotGuideView(date, activity, guide);
+      const goBack = () => {
+        if (editing) {
+          editing = false;
+          render();
+          return;
+        }
+        closeModal();
+      };
+      const saveGuide = () => {
+        snapshotDate(date);
+        activity.guide = collectSpotGuideDraft();
+        save();
+        showEphemeralToast('已保存景点攻略', getActivityDisplayTitle(activity));
+        refreshDayUi(date, {
+          sections: [DAY_UI_SECTION.dayRoute],
+          planRoute: true,
+          updateToggle: false
+        });
+        editing = false;
+        render();
+      };
+      root.querySelector('#spotGuideBack')?.addEventListener('click', closeModal);
+      root.querySelector('#spotGuideCancelEdit')?.addEventListener('click', goBack);
+      root.querySelector('#spotGuideCancelBottom')?.addEventListener('click', goBack);
+      root.querySelector('#spotGuideTopEdit')?.addEventListener('click', () => { editing = true; render(); });
+      root.querySelector('#spotGuideSaveTop')?.addEventListener('click', saveGuide);
+      root.querySelector('#spotGuideSaveBottom')?.addEventListener('click', saveGuide);
+      root.querySelector('#spotGuideShare')?.addEventListener('click', async () => {
+        const shareTitle = `${getActivityDisplayTitle(activity)} 景点攻略`;
+        const shareText = `${shareTitle} · ${formatPlanDateSummary(date)}`;
+        try {
+          if (navigator.share) {
+            await navigator.share({ title: shareTitle, text: shareText, url: window.location.href });
+          } else if (navigator.clipboard) {
+            await navigator.clipboard.writeText(window.location.href);
+            showEphemeralToast('已复制当前页面链接', shareTitle);
+          }
+        } catch (error) {
+          console.warn('Guide share failed', error);
+        }
+      });
+      const coverInput = root.querySelector('#guideCoverImage');
+      const coverUrlInput = root.querySelector('#guideCoverUrlInput');
+      const coverUrlRow = root.querySelector('#guideCoverUrlRow');
+      const coverLinkToggle = root.querySelector('#guideCoverLinkToggle');
+      const coverReset = root.querySelector('#guideCoverReset');
+      const coverFileInput = root.querySelector('#guideCoverFile');
+      const guideImagesInput = root.querySelector('#guideImagesData');
+      const guideImageCaptionsInput = root.querySelector('#guideImageCaptionsData');
+      const guideGalleryFiles = root.querySelector('#guideGalleryFiles');
+      const guideGalleryEditor = root.querySelector('#guideGalleryEditor');
+      const guidePhotoSpotsInput = root.querySelector('#guidePhotoSpots');
+      const coverStatus = root.querySelector('#guideCoverUploadStatus');
+      const galleryStatus = root.querySelector('#guideGalleryUploadStatus');
+      const coverHero = root.querySelector('#spotGuideEditHero');
+      const updateCoverPreview = () => {
+        if (!coverInput || !coverHero) return;
+        setGuideHeroBackground(coverHero, coverInput.value);
+      };
+      const setCoverValue = (value, status = '') => {
+        if (!coverInput) return;
+        coverInput.value = value;
+        updateCoverPreview();
+        if (coverStatus && status) coverStatus.textContent = status;
+      };
+      const getDraftGalleryImages = () => normalizeGuideImages(safeParseJson(guideImagesInput?.value || '[]', []));
+      const getDraftImageCaptions = () => normalizeGuideImageCaptions(safeParseJson(guideImageCaptionsInput?.value || '[]', []));
+      const setDraftImageCaptions = captions => {
+        if (!guideImageCaptionsInput) return;
+        guideImageCaptionsInput.value = JSON.stringify(normalizeGuideImageCaptions(captions));
+      };
+      const renderDraftGalleryEditor = () => {
+        if (!guideGalleryEditor) return;
+        guideGalleryEditor.innerHTML = renderGuideImageEditorItems({
+          images: getDraftGalleryImages(),
+          imageCaptions: getDraftImageCaptions(),
+          photoSpots: guidePhotoSpotsInput?.value || ''
+        });
+        bindGuideGalleryEditor();
+      };
+      const setDraftGalleryImages = images => {
+        if (!guideImagesInput) return;
+        guideImagesInput.value = JSON.stringify(normalizeGuideImages(images));
+        renderDraftGalleryEditor();
+      };
+      function bindGuideGalleryEditor() {
+        guideGalleryEditor?.querySelectorAll('.spot-guide-image-caption').forEach(input => {
+          input.addEventListener('input', () => {
+            const index = Number(input.dataset.guideImageIndex || 0);
+            const captions = getDraftImageCaptions();
+            captions[index] = input.value;
+            setDraftImageCaptions(captions);
+          });
+        });
+        guideGalleryEditor?.querySelectorAll('.spot-guide-image-remove').forEach(button => {
+          button.addEventListener('click', () => {
+            const index = Number(button.dataset.guideImageIndex || 0);
+            const images = getDraftGalleryImages();
+            if (index < 0 || index >= images.length) return;
+            const captions = getDraftImageCaptions();
+            images.splice(index, 1);
+            captions.splice(index, 1);
+            setDraftImageCaptions(captions);
+            setDraftGalleryImages(images);
+            if (galleryStatus) galleryStatus.textContent = '已删除拍照点图片，保存攻略后生效。';
+          });
+        });
+      }
+      bindGuideGalleryEditor();
+      coverLinkToggle?.addEventListener('click', () => {
+        const visible = !coverUrlRow?.classList.contains('visible');
+        coverUrlRow?.classList.toggle('visible', visible);
+        coverLinkToggle.classList.toggle('active', visible);
+        if (visible) window.setTimeout(() => coverUrlInput?.focus(), 80);
+      });
+      coverUrlInput?.addEventListener('input', () => {
+        setCoverValue(coverUrlInput.value.trim(), coverUrlInput.value.trim() ? '已使用图片链接，保存攻略后生效。' : '链接为空时使用默认封面。');
+      });
+      coverReset?.addEventListener('click', () => {
+        if (coverUrlInput) coverUrlInput.value = '';
+        coverUrlRow?.classList.remove('visible');
+        coverLinkToggle?.classList.remove('active');
+        setCoverValue('', '已恢复默认封面，保存攻略后生效。');
+      });
+      coverFileInput?.addEventListener('change', async () => {
+        const file = coverFileInput.files?.[0];
+        if (!file || !coverInput) return;
+        if (coverStatus) coverStatus.textContent = '正在压缩图片...';
+        try {
+          const nextCover = await compressGuideCoverFile(file);
+          if (coverUrlInput) coverUrlInput.value = '';
+          coverUrlRow?.classList.remove('visible');
+          coverLinkToggle?.classList.remove('active');
+          setCoverValue(nextCover);
+          if (coverStatus) coverStatus.textContent = '已导入本地图片，保存攻略后生效。';
+        } catch (error) {
+          console.warn('Guide cover upload failed', error);
+          if (coverStatus) coverStatus.textContent = '图片导入失败，请换一张图片或使用图片 URL。';
+        } finally {
+          coverFileInput.value = '';
+        }
+      });
+      guideGalleryFiles?.addEventListener('change', async () => {
+        const files = Array.from(guideGalleryFiles.files || []).filter(file => file.type?.startsWith('image/'));
+        if (!files.length || !guideImagesInput) return;
+        if (galleryStatus) galleryStatus.textContent = `正在压缩 ${files.length} 张拍照点图片...`;
+        try {
+          const importedImages = await Promise.all(files.map(file => compressGuideCoverFile(file)));
+          setDraftGalleryImages([...getDraftGalleryImages(), ...importedImages]);
+          if (galleryStatus) galleryStatus.textContent = `已添加 ${importedImages.length} 张拍照点图片，保存攻略后生效。`;
+        } catch (error) {
+          console.warn('Guide gallery upload failed', error);
+          if (galleryStatus) galleryStatus.textContent = '拍照点图片导入失败，请换一张图片再试。';
+        } finally {
+          guideGalleryFiles.value = '';
+        }
+      });
+      root.querySelectorAll('.spot-guide-photo-strip').forEach(strip => {
+        attachStripDragScroll(strip, strip, {
+          boundKey: 'spotGuidePhotoDragBound',
+          dragClass: 'dragging-strip',
+          startInertia: velocity => startHorizontalInertia(strip, velocity * 0.42)
+        });
+      });
+      root.querySelectorAll('.spot-guide-tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+          root.querySelectorAll('.spot-guide-tab').forEach(item => item.classList.toggle('active', item === tab));
+          root.querySelector(`#${tab.dataset.target}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+      });
+    };
+    overlay.onclick = (event) => {
+      if (event.target === overlay) closeModal();
+    };
+    render();
   }
 
   function getRouteStopRole(stop, index) {
@@ -4453,6 +6036,14 @@
     routePanel.querySelectorAll('.route-attraction-card').forEach(card => {
       const index = Number(card.dataset.stopIndex);
       const activityIndex = card.dataset.activityIndex ? Number(card.dataset.activityIndex) : null;
+      const guideLink = card.querySelector('.route-guide-link');
+      if (guideLink && activityIndex != null) {
+        guideLink.onclick = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openSpotGuidePage(date, activityIndex);
+        };
+      }
       const activate = () => {
         if (isClickSuppressed()) return;
         toggleRouteStopSelection(routePanel, index, totalStops, {
@@ -5356,7 +6947,7 @@
     const segments = buildRouteSegments(route.stops, dayData.activities)
       .map((segment, index) => ({ ...segment, index }))
       .filter(segment => segment.visibleInRouteList);
-    const attractionCards = buildRouteAttractionCards(route.stops, dayData.activities);
+    const attractionCards = buildRouteAttractionCards(route.stops, dayData.activities, dayData.tags);
     const routeContentCards = buildRouteContentCards(segments, attractionCards);
     const routeContentCount = routeContentCards.length;
     if (!route.stops.length) {
@@ -7013,6 +8604,7 @@
       const tag = dayData.tags.find(t => t.id === act.tagId);
       if (!tag) return;
       const isTransport = isTransportActivity(act);
+      const isSight = act.tagId === 'sight';
       const startMin = timeToMin(act.startTime);
       const endMin = timeToMin(act.endTime);
       const heightPct = ((endMin - startMin) / (24*60)) * 100;
@@ -7045,12 +8637,21 @@
       const transportMeta = getTransportMeta(getTransportMode(act, 'drive'));
       const notePreview = escapeHtml(getActivityPreviewNote(act));
       const contentDensityClass = isDetailMode ? 'expanded' : 'compact';
+      const guideLinkHtml = isSight ? `<button class="activity-guide-link" type="button" data-activity-index="${act.origIdx}">攻略</button>` : '';
       block.dataset.index = act.origIdx;
       if (isTransport) block.classList.add(`transport-${previewDensity}`);
       block.innerHTML = isTransport
         ? `<div class="activity-content transport-content ${contentDensityClass}"><div class="activity-main-row"><span class="activity-kicker">移动</span><span class="activity-time">${compactTimeLabel}</span><span class="activity-meta transport-route">${displayMeta}</span><span class="activity-duration transport-duration">${transportMeta.icon}${transportMeta.name}</span></div>${notePreview ? `<div class="activity-note transport-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`
-        : `<div class="activity-content ${contentDensityClass}"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`;
+        : `<div class="activity-content ${contentDensityClass}"><div class="activity-main-row"><span class="activity-title">${displayTitle}</span><span class="activity-time">${compactTimeLabel}</span>${displayMeta ? `<span class=\"activity-meta\">${displayMeta}</span>` : ''}</div>${notePreview ? `<div class="activity-note">${notePreview}</div>` : ''}${guideLinkHtml}</div><div class="drag-handle drag-top"></div><div class="drag-handle drag-bottom"></div><div class="drag-handle drag-body"></div>`;
       timeline.appendChild(block);
+      const activityGuideLink = block.querySelector('.activity-guide-link');
+      if (activityGuideLink) {
+        activityGuideLink.onclick = (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          openSpotGuidePage(date, act.origIdx);
+        };
+      }
       attachBlockEvents(block, date, act.origIdx);
     });
   }
@@ -7210,6 +8811,7 @@
     const onPointerDown = (e) => {
       if (activePointerId != null && activePointerId !== e.pointerId) return;
       const target = e.target;
+      if (target.closest('.activity-guide-link')) return;
       const touchPointer = isTouchPointer(e);
       const shortBlockEdgeIntent = getShortBlockEdgeIntent(e);
       if (target.closest('.drag-top')) dragType = 'top';
@@ -7369,6 +8971,7 @@
     const onClick = (e) => {
       if (Number(block.dataset.suppressClickUntil || 0) > Date.now()) return;
       if (e.target.closest('.drag-handle')) return;
+      if (e.target.closest('.activity-guide-link')) return;
       editActivity(date, index);
     };
 
@@ -7605,7 +9208,8 @@
         endLocation: isTransport ? endLocation : '',
         transportMode: isTransport ? transportMode : '',
         description: descInput.value,
-        tagId: selectedTagId
+        tagId: selectedTagId,
+        guide: normalizeSpotGuide(act?.guide)
       };
       if (act) dayData.activities[editIndex] = data; else dayData.activities.push(data);
       save();
