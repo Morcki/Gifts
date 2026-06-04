@@ -3820,7 +3820,7 @@
       transportNeedsMode: '行程事件必须选择交通方式',
       planNeedsDates: '请选择日期',
       planEndAfterStart: '结束日期不能早于开始',
-      importNeedsFile: '请选择 .travelplan 旅行包、ZIP 旅行包或 JSON 文件',
+      importNeedsFile: '请选择 .travelplan 旅行包',
       importInvalidFile: '文件格式不符合当前导入规范',
       importNoPlans: '文件中没有可导入的计划'
     }
@@ -4438,21 +4438,21 @@
         break;
       }
     }
-    if (eocdOffset < 0) throw new Error('未找到 ZIP 目录');
+    if (eocdOffset < 0) throw new Error('未识别到旅行包目录');
     const entryCount = view.getUint16(eocdOffset + 10, true);
     let centralOffset = view.getUint32(eocdOffset + 16, true);
     const entries = new Map();
     for (let i = 0; i < entryCount; i += 1) {
-      if (view.getUint32(centralOffset, true) !== 0x02014b50) throw new Error('ZIP 目录损坏');
+      if (view.getUint32(centralOffset, true) !== 0x02014b50) throw new Error('旅行包目录损坏');
       const method = view.getUint16(centralOffset + 10, true);
-      if (method !== 0) throw new Error('暂不支持压缩过的 ZIP 条目，请使用本应用导出的旅行包');
+      if (method !== 0) throw new Error('暂不支持该旅行包压缩方式，请使用本应用导出的旅行包');
       const compressedSize = view.getUint32(centralOffset + 20, true);
       const nameLength = view.getUint16(centralOffset + 28, true);
       const extraLength = view.getUint16(centralOffset + 30, true);
       const commentLength = view.getUint16(centralOffset + 32, true);
       const localOffset = view.getUint32(centralOffset + 42, true);
       const name = normalizeZipPath(decoder.decode(bytes.subarray(centralOffset + 46, centralOffset + 46 + nameLength)));
-      if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('ZIP 文件条目损坏');
+      if (view.getUint32(localOffset, true) !== 0x04034b50) throw new Error('旅行包文件条目损坏');
       const localNameLength = view.getUint16(localOffset + 26, true);
       const localExtraLength = view.getUint16(localOffset + 28, true);
       const dataStart = localOffset + 30 + localNameLength + localExtraLength;
@@ -4509,16 +4509,23 @@
 
   async function readTravelImportFile(file) {
     const fileName = file?.name || '';
-    const isZipFile = /\.(zip|travelplan)$/i.test(fileName)
-      || /zip/i.test(file?.type || '')
-      || String(file?.type || '').toLowerCase() === TRAVEL_PACKAGE_MIME;
-    if (!isZipFile) {
+    const fileType = String(file?.type || '').toLowerCase();
+    const looksJsonFile = /\.json$/i.test(fileName) || fileType.includes('json');
+    if (looksJsonFile) {
       const text = await file.text();
       return { payload: safeParseJson(text, null), packageInfo: null };
     }
-    const entries = readZipEntries(await file.arrayBuffer());
+    const buffer = await file.arrayBuffer();
+    let entries = null;
+    try {
+      entries = readZipEntries(buffer);
+    } catch (zipError) {
+      const textPayload = safeParseJson(new TextDecoder().decode(new Uint8Array(buffer)), null);
+      if (textPayload != null) return { payload: textPayload, packageInfo: null };
+      throw zipError;
+    }
     const planBytes = entries.get('plan.json');
-    if (!planBytes) throw new Error('旅行包中缺少 plan.json');
+    if (!planBytes) throw new Error('旅行包中缺少核心计划数据');
     const payload = safeParseJson(new TextDecoder().decode(planBytes), null);
     const prepared = preparePackageAssetReferences(payload, entries);
     return {
@@ -9269,13 +9276,13 @@
       <div class="modal-overlay" id="modal"><div class="modal wide" role="dialog" aria-modal="true" aria-label="导入旅行计划">
         <div class="modal-header">
           <h3>导入旅行计划</h3>
-          <div class="modal-subtitle">支持当前应用导出的 .travelplan 旅行包，旧版 ZIP / JSON 备份也可以继续导入。导入前会自动做结构校验与格式修正。</div>
+          <div class="modal-subtitle">支持当前应用导出的 .travelplan 旅行包。导入前会自动做结构校验与格式修正。</div>
         </div>
         <div class="modal-body">
           <div class="import-file-card">
             <div class="import-file-copy">
               <div class="import-file-name" id="importFileName">尚未选择文件</div>
-              <div class="import-file-meta" id="importFileMeta">请选择一个 .travelplan 旅行包，或旧版 .zip / .json 备份。</div>
+              <div class="import-file-meta" id="importFileMeta">请选择一个 .travelplan 旅行包。</div>
             </div>
             <button class="tool-btn primary" type="button" id="pickImportFileBtn">选择文件</button>
           </div>
@@ -9303,7 +9310,7 @@
     const { modal, panel, close: closeModal } = mountModal(html);
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = `.travelplan,.zip,.json,${TRAVEL_PACKAGE_MIME},application/zip,application/json`;
+    fileInput.accept = '';
     fileInput.style.display = 'none';
     panel.appendChild(fileInput);
 
@@ -9326,7 +9333,7 @@
     const syncFileUi = () => {
       if (!draftFileState) {
         fileNameEl.textContent = '尚未选择文件';
-        fileMetaEl.textContent = '请选择一个 .travelplan 旅行包，或旧版 .zip / .json 备份。';
+        fileMetaEl.textContent = '请选择一个 .travelplan 旅行包。';
         previewTitleEl.textContent = '等待文件';
         previewMetaEl.textContent = '导入前不会改动本地数据。';
         statusEl.textContent = '建议定期导出为 .travelplan 旅行包，图片会随文件一起分享。';
@@ -9347,7 +9354,7 @@
       previewTitleEl.textContent = `${draftFileState.planCount} 个计划待导入`;
       previewMetaEl.textContent = draftFileState.exportedAt
         ? `导出时间 ${new Date(draftFileState.exportedAt).toLocaleString('zh-CN')}`
-        : '文件未携带导出时间，已按通用数组导入规则解析。';
+        : '文件未携带导出时间，已按旅行包规则解析。';
       const missingAssetNote = draftFileState.missingAssets
         ? ` 有 ${draftFileState.missingAssets} 张图片未在旅行包中找到。`
         : '';
@@ -9411,7 +9418,7 @@
       fileNameEl.textContent = file.name;
       fileMetaEl.textContent = '正在解析旅行包...';
       previewTitleEl.textContent = '正在读取';
-      previewMetaEl.textContent = '正在校验 plan.json，图片会在确认导入时分批保存。';
+      previewMetaEl.textContent = '正在校验旅行包，图片会在确认导入时分批保存。';
       statusEl.textContent = '';
       confirmBtn.disabled = true;
       let importResult = null;
@@ -9443,7 +9450,7 @@
             exportedAt: extracted?.meta?.exportedAt || '',
             version: packageInfo?.type === 'zip'
               ? `旅行包 v${extracted?.meta?.version || EXPORT_VERSION}`
-              : (extracted?.meta?.version ? `JSON v${extracted.meta.version}` : 'JSON array')
+              : '旅行包'
           }
         : {
             valid: false,
