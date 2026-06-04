@@ -3697,6 +3697,10 @@
 <script>
   const STORAGE_KEY = 'travel_plans_v13';
   const UI_STATE_KEY = 'travel_plans_ui_state_v1';
+  const ASSET_DB_NAME = 'travel_plans_asset_db_v1';
+  const ASSET_DB_VERSION = 1;
+  const ASSET_STORE_NAME = 'assets';
+  const APP_ASSET_PREFIX = 'app-asset:';
   const CALENDAR_ACTIVITY_DISPLAY_MODES = Object.freeze({
     compact: 'compact',
     detail: 'detail'
@@ -3719,6 +3723,9 @@
   let selectedPlanIds = new Set();
   let cardLongPressState = null;
   let suppressPlanOpenId = null;
+  let appAssetDbPromise = null;
+  const appAssetUrlCache = new Map();
+  const appAssetBytesCache = new Map();
   const CARD_LONG_PRESS_MS = 420;
   const uiLayerState = {
     modal: null,
@@ -4101,6 +4108,148 @@
     return btoa(chunks.join(''));
   }
 
+  function isAppAssetRef(value) {
+    return String(value || '').trim().startsWith(APP_ASSET_PREFIX);
+  }
+
+  function makeAppAssetRef(key) {
+    return `${APP_ASSET_PREFIX}${normalizeZipPath(key)}`;
+  }
+
+  function getAppAssetKey(value) {
+    const ref = String(value || '').trim();
+    return normalizeZipPath(isAppAssetRef(ref) ? ref.slice(APP_ASSET_PREFIX.length) : ref);
+  }
+
+  function cloneAssetBytes(value) {
+    if (value instanceof Uint8Array) return value.slice();
+    if (value instanceof ArrayBuffer) return new Uint8Array(value).slice();
+    if (ArrayBuffer.isView(value)) return new Uint8Array(value.buffer, value.byteOffset, value.byteLength).slice();
+    return new Uint8Array();
+  }
+
+  function cacheAppAssetRecord(record) {
+    const key = getAppAssetKey(record?.key);
+    if (!key) return '';
+    const bytes = cloneAssetBytes(record.bytes);
+    const mimeType = record.mimeType || getMimeTypeFromFilename(key);
+    appAssetBytesCache.set(key, { mimeType, bytes });
+    const previousUrl = appAssetUrlCache.get(key);
+    if (previousUrl) return previousUrl;
+    const objectUrl = URL.createObjectURL(new Blob([bytes], { type: mimeType }));
+    appAssetUrlCache.set(key, objectUrl);
+    return objectUrl;
+  }
+
+  function openAppAssetDb() {
+    if (!('indexedDB' in window)) return Promise.reject(new Error('当前浏览器不支持本地图片资源库'));
+    if (appAssetDbPromise) return appAssetDbPromise;
+    appAssetDbPromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(ASSET_DB_NAME, ASSET_DB_VERSION);
+      request.onupgradeneeded = () => {
+        const db = request.result;
+        if (!db.objectStoreNames.contains(ASSET_STORE_NAME)) {
+          db.createObjectStore(ASSET_STORE_NAME, { keyPath: 'key' });
+        }
+      };
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => {
+        appAssetDbPromise = null;
+        reject(request.error || new Error('无法打开本地图片资源库'));
+      };
+      request.onblocked = () => {
+        appAssetDbPromise = null;
+        reject(new Error('本地图片资源库被旧页面占用，请关闭其它旅行规划页面后重试'));
+      };
+    });
+    return appAssetDbPromise;
+  }
+
+  async function readAppAssetRecord(key) {
+    const normalizedKey = getAppAssetKey(key);
+    if (!normalizedKey) return null;
+    const cached = appAssetBytesCache.get(normalizedKey);
+    if (cached) return { key: normalizedKey, ...cached };
+    const db = await openAppAssetDb();
+    return new Promise((resolve, reject) => {
+      const request = db.transaction(ASSET_STORE_NAME, 'readonly')
+        .objectStore(ASSET_STORE_NAME)
+        .get(normalizedKey);
+      request.onsuccess = () => resolve(request.result || null);
+      request.onerror = () => reject(request.error || new Error('读取本地图片失败'));
+    });
+  }
+
+  async function putAppAssetRecord(asset) {
+    const key = getAppAssetKey(asset?.key);
+    if (!key) return null;
+    const bytes = cloneAssetBytes(asset.bytes);
+    const record = {
+      key,
+      mimeType: asset.mimeType || getMimeTypeFromFilename(key),
+      bytes: bytes.buffer,
+      updatedAt: new Date().toISOString()
+    };
+    const db = await openAppAssetDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction(ASSET_STORE_NAME, 'readwrite');
+      tx.objectStore(ASSET_STORE_NAME).put(record);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error || new Error('保存本地图片失败'));
+      tx.onabort = () => reject(tx.error || new Error('保存本地图片已取消'));
+    });
+    cacheAppAssetRecord({ ...record, bytes });
+    return record;
+  }
+
+  async function warmAppAssetUrlsForPlans(sourcePlans = plans) {
+    const keys = new Set();
+    const collect = (value) => {
+      if (isAppAssetRef(value)) keys.add(getAppAssetKey(value));
+    };
+    (sourcePlans || []).forEach(plan => {
+      Object.values(plan.days || {}).forEach(day => {
+        (day.activities || []).forEach(activity => {
+          const guide = activity.guide || {};
+          collect(guide.coverImage);
+          normalizeGuideImages(guide.images).forEach(collect);
+        });
+      });
+    });
+    let loadedCount = 0;
+    for (const key of keys) {
+      const record = await readAppAssetRecord(key);
+      if (record) cacheAppAssetRecord(record);
+      loadedCount += 1;
+      if (loadedCount % 8 === 0) await waitForBrowserIdle();
+    }
+  }
+
+  function getCachedAppAssetUrl(value) {
+    return appAssetUrlCache.get(getAppAssetKey(value)) || '';
+  }
+
+  function waitForBrowserIdle() {
+    return new Promise(resolve => window.setTimeout(resolve, 0));
+  }
+
+  function getSafeAssetFilename(path) {
+    const fallback = 'image.webp';
+    const filename = normalizeZipPath(path).split('/').pop() || fallback;
+    const safeName = filename
+      .normalize('NFKC')
+      .replace(/[<>:"/\\|?*\u0000-\u001F]/g, '-')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+    return safeName || fallback;
+  }
+
+  function createImportedAssetKey(path, bytes) {
+    const checksum = crc32(bytes).toString(16).padStart(8, '0');
+    return `assets/imported/${checksum}-${bytes.length}-${getSafeAssetFilename(path)}`;
+  }
+
   function parseDataImageUrl(value) {
     const match = String(value || '').trim().match(/^data:(image\/[a-z0-9.+-]+);base64,([\s\S]+)$/i);
     if (!match) return null;
@@ -4112,9 +4261,20 @@
 
   function collectTravelPackageAssets(payload) {
     const dataUrlPathMap = new Map();
+    const storedAssetPathMap = new Map();
     const assets = [];
     const addImageAsset = (value, basePath) => {
       const imageValue = String(value || '').trim();
+      if (isAppAssetRef(imageValue)) {
+        const key = getAppAssetKey(imageValue);
+        const cached = appAssetBytesCache.get(key);
+        if (!cached?.bytes?.length) return imageValue;
+        if (storedAssetPathMap.has(key)) return storedAssetPathMap.get(key);
+        const path = normalizeZipPath(key) || `${basePath}.${getImageExtensionFromMime(cached.mimeType)}`;
+        storedAssetPathMap.set(key, path);
+        assets.push({ path, data: cached.bytes });
+        return path;
+      }
       if (!isDataImageUrl(imageValue)) return imageValue;
       if (dataUrlPathMap.has(imageValue)) return dataUrlPathMap.get(imageValue);
       const parsed = parseDataImageUrl(imageValue);
@@ -4300,24 +4460,34 @@
     return entries;
   }
 
-  function hydratePackageAssetReferences(payload, zipEntries) {
+  function preparePackageAssetReferences(payload, zipEntries) {
     const extracted = extractPlansPayload(payload);
-    if (!extracted) return { payload, assetCount: 0, missingAssets: 0 };
+    if (!extracted) return { payload, assetCount: 0, missingAssets: 0, assetsToStore: [] };
     let missingAssets = 0;
-    const assetDataUrlMap = new Map();
+    const assetRefMap = new Map();
+    const assetsToStore = new Map();
     const resolveAssetReference = (value) => {
       const ref = String(value || '').trim();
-      if (!ref || isDataImageUrl(ref) || /^(https?:|\.\/|\.\.\/)/i.test(ref)) return ref;
+      if (!ref || isDataImageUrl(ref) || isAppAssetRef(ref) || /^(https?:|blob:|\.\/|\.\.\/)/i.test(ref)) return ref;
       const path = normalizeZipPath(ref);
-      if (assetDataUrlMap.has(path)) return assetDataUrlMap.get(path);
+      if (!path || path === DEFAULT_SPOT_GUIDE_COVER) return ref;
+      if (assetRefMap.has(path)) return assetRefMap.get(path);
       const bytes = zipEntries.get(path);
       if (!bytes) {
         missingAssets += 1;
         return ref;
       }
-      const dataUrl = `data:${getMimeTypeFromFilename(path)};base64,${bytesToBase64(bytes)}`;
-      assetDataUrlMap.set(path, dataUrl);
-      return dataUrl;
+      const key = createImportedAssetKey(path, bytes);
+      const assetRef = makeAppAssetRef(key);
+      assetRefMap.set(path, assetRef);
+      if (!assetsToStore.has(key)) {
+        assetsToStore.set(key, {
+          key,
+          mimeType: getMimeTypeFromFilename(path),
+          bytes
+        });
+      }
+      return assetRef;
     };
 
     extracted.plans.forEach(plan => {
@@ -4332,7 +4502,7 @@
       });
     });
 
-    return { payload, assetCount: assetDataUrlMap.size, missingAssets };
+    return { payload, assetCount: assetsToStore.size, missingAssets, assetsToStore: [...assetsToStore.values()] };
   }
 
   async function readTravelImportFile(file) {
@@ -4346,15 +4516,33 @@
     const planBytes = entries.get('plan.json');
     if (!planBytes) throw new Error('旅行包中缺少 plan.json');
     const payload = safeParseJson(new TextDecoder().decode(planBytes), null);
-    const hydrated = hydratePackageAssetReferences(payload, entries);
+    const prepared = preparePackageAssetReferences(payload, entries);
     return {
-      payload: hydrated.payload,
+      payload: prepared.payload,
       packageInfo: {
         type: 'zip',
-        assetCount: hydrated.assetCount,
-        missingAssets: hydrated.missingAssets
+        assetCount: prepared.assetCount,
+        missingAssets: prepared.missingAssets,
+        assetsToStore: prepared.assetsToStore
       }
     };
+  }
+
+  async function storeImportedPackageAssets(assetsToStore = [], onProgress = null) {
+    const uniqueAssets = [];
+    const seen = new Set();
+    assetsToStore.forEach(asset => {
+      const key = getAppAssetKey(asset?.key);
+      if (!key || seen.has(key)) return;
+      seen.add(key);
+      uniqueAssets.push({ ...asset, key });
+    });
+    for (let index = 0; index < uniqueAssets.length; index += 1) {
+      await putAppAssetRecord(uniqueAssets[index]);
+      if (typeof onProgress === 'function') onProgress(index + 1, uniqueAssets.length);
+      await waitForBrowserIdle();
+    }
+    return uniqueAssets.length;
   }
 
   function load() {
@@ -5259,7 +5447,8 @@
   function getGuideImageUrl(value, fallback = '') {
     const url = String(value || '').trim();
     if (!url) return fallback;
-    if (/^(https?:|data:image\/|assets\/|\.\/|\.\.\/)/i.test(url)) return url;
+    if (isAppAssetRef(url)) return getCachedAppAssetUrl(url) || fallback;
+    if (/^(https?:|data:image\/|blob:|assets\/|\.\/|\.\.\/)/i.test(url)) return url;
     return fallback;
   }
 
@@ -5568,7 +5757,7 @@
 
   function renderSpotGuideEdit(date, activity, guide) {
     const title = getActivityDisplayTitle(activity);
-    const hasLinkCover = Boolean(guide.coverImage && !/^data:image\//i.test(guide.coverImage));
+    const hasLinkCover = Boolean(guide.coverImage && !isDataImageUrl(guide.coverImage) && !isAppAssetRef(guide.coverImage));
     return `
       <div class="spot-guide-header">
         <button class="spot-guide-nav-btn" type="button" id="spotGuideCancelEdit" aria-label="取消">‹</button>
@@ -9141,11 +9330,29 @@
         alert(uiText.validation.importNoPlans);
         return;
       }
-      plans = draftMode === 'replace' ? importedPlans : [...plans, ...importedPlans];
-      save();
-      closeModal();
-      renderMain();
-      showEphemeralToast(uiText.toast.importedPlans, `${importedPlans.length} 个计划 · ${draftMode === 'replace' ? '已替换本地' : '已并入本地'}`);
+      const originalConfirmText = confirmBtn.textContent;
+      confirmBtn.disabled = true;
+      confirmBtn.textContent = '导入中';
+      try {
+        const assetTotal = draftFileState.assetsToStore?.length || 0;
+        if (assetTotal) {
+          statusEl.textContent = `正在保存图片 0/${assetTotal}，请不要关闭页面。`;
+          await storeImportedPackageAssets(draftFileState.assetsToStore, (done, total) => {
+            statusEl.textContent = `正在保存图片 ${done}/${total}，请不要关闭页面。`;
+          });
+        }
+        plans = draftMode === 'replace' ? importedPlans : [...plans, ...importedPlans];
+        save();
+        closeModal();
+        renderMain();
+        showEphemeralToast(uiText.toast.importedPlans, `${importedPlans.length} 个计划 · ${draftMode === 'replace' ? '已替换本地' : '已并入本地'}`);
+      } catch (error) {
+        console.warn('Import asset save failed', error);
+        statusEl.textContent = error?.message || '图片保存失败，导入已取消。';
+        alert(statusEl.textContent);
+        confirmBtn.disabled = false;
+        confirmBtn.textContent = originalConfirmText;
+      }
     };
 
     fileInput.onchange = async () => {
@@ -9154,7 +9361,7 @@
       fileNameEl.textContent = file.name;
       fileMetaEl.textContent = '正在解析旅行包...';
       previewTitleEl.textContent = '正在读取';
-      previewMetaEl.textContent = '请稍候，图片较多时可能需要几秒。';
+      previewMetaEl.textContent = '正在校验 plan.json，图片会在确认导入时分批保存。';
       statusEl.textContent = '';
       confirmBtn.disabled = true;
       let importResult = null;
@@ -9182,6 +9389,7 @@
             planCount: normalizedPlans.length,
             assetCount: packageInfo?.assetCount || 0,
             missingAssets: packageInfo?.missingAssets || 0,
+            assetsToStore: packageInfo?.assetsToStore || [],
             exportedAt: extracted?.meta?.exportedAt || '',
             version: packageInfo?.type === 'zip'
               ? `旅行包 v${extracted?.meta?.version || EXPORT_VERSION}`
@@ -10564,10 +10772,19 @@
     renderMain();
   }
 
-  calendarActivityDisplayMode = loadCalendarActivityDisplayMode();
-  load();
-  restoreInitialAppView();
-  registerServiceWorkerForUpdates();
+  async function bootTravelPlanner() {
+    calendarActivityDisplayMode = loadCalendarActivityDisplayMode();
+    load();
+    try {
+      await warmAppAssetUrlsForPlans(plans);
+    } catch (error) {
+      console.warn('Local guide image warmup failed', error);
+    }
+    restoreInitialAppView();
+    registerServiceWorkerForUpdates();
+  }
+
+  bootTravelPlanner();
 </script>
 </body>
 </html>
