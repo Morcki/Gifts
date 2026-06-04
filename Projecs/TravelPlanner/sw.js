@@ -1,10 +1,10 @@
-const CACHE_NAME = 'travel-plans-v26';
+const CACHE_NAME = 'travel-plans-v36';
 const urlsToCache = [
   './',
   './index.html',
   './manifest.json',
   './icon.png',
-  './assets/guide-cover-west-sichuan.png'
+  './assets/guide-cover-west-sichuan.webp'
 ];
 
 self.addEventListener('install', event => {
