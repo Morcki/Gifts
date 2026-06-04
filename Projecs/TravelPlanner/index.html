@@ -80,7 +80,7 @@
       font-size: 15px; font-weight: 700; color: #111827;
     }
     .tool-card-title::before {
-      content: 'ZIP';
+      content: 'PLAN';
       display: inline-flex; align-items: center; justify-content: center;
       min-width: 42px; height: 24px; padding: 0 8px;
       border-radius: 999px; background: rgba(10,132,255,0.12); color: #075985;
@@ -3707,6 +3707,8 @@
   });
   const SPOT_GUIDE_FACT_MAX_LENGTH = 20;
   const DEFAULT_SPOT_GUIDE_COVER = 'assets/guide-cover-west-sichuan.webp';
+  const TRAVEL_PACKAGE_EXTENSION = 'travelplan';
+  const TRAVEL_PACKAGE_MIME = 'application/x-travelplan';
   const EXPORT_SCHEMA = 'travel-plans-export';
   const EXPORT_VERSION = 2;
   let plans = [];
@@ -3818,7 +3820,7 @@
       transportNeedsMode: '行程事件必须选择交通方式',
       planNeedsDates: '请选择日期',
       planEndAfterStart: '结束日期不能早于开始',
-      importNeedsFile: '请选择一个 ZIP 旅行包或 JSON 文件',
+      importNeedsFile: '请选择 .travelplan 旅行包、ZIP 旅行包或 JSON 文件',
       importInvalidFile: '文件格式不符合当前导入规范',
       importNoPlans: '文件中没有可导入的计划'
     }
@@ -4421,7 +4423,7 @@
     endView.setUint32(16, localData.length, true);
     endView.setUint16(20, 0, true);
 
-    return new Blob([localData, centralDirectory, endRecord], { type: 'application/zip' });
+    return new Blob([localData, centralDirectory, endRecord], { type: TRAVEL_PACKAGE_MIME });
   }
 
   function readZipEntries(arrayBuffer) {
@@ -4507,7 +4509,9 @@
 
   async function readTravelImportFile(file) {
     const fileName = file?.name || '';
-    const isZipFile = /\.zip$/i.test(fileName) || /zip/i.test(file?.type || '');
+    const isZipFile = /\.(zip|travelplan)$/i.test(fileName)
+      || /zip/i.test(file?.type || '')
+      || String(file?.type || '').toLowerCase() === TRAVEL_PACKAGE_MIME;
     if (!isZipFile) {
       const text = await file.text();
       return { payload: safeParseJson(text, null), packageInfo: null };
@@ -9070,10 +9074,15 @@
       };
       handle.onpointerdown = (e) => startCardDrag(e, card, handle);
       if (exportBtn) {
-        exportBtn.onclick = (e) => {
+        exportBtn.onclick = async (e) => {
           e.preventDefault();
           e.stopPropagation();
-          exportSinglePlanAsPackage(id);
+          exportBtn.disabled = true;
+          try {
+            await exportSinglePlanAsPackage(id);
+          } finally {
+            exportBtn.disabled = false;
+          }
         };
       }
 
@@ -9167,12 +9176,48 @@
     window.setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
   }
 
-  function exportPlansAsPackage() {
+  async function shareOrDownloadBlobFile(filename, blob, options = {}) {
+    const canCreateFile = typeof File === 'function';
+    const file = canCreateFile
+      ? new File([blob], filename, { type: blob.type || 'application/octet-stream' })
+      : null;
+    if (file && navigator.share) {
+      try {
+        const fallbackZipFile = new File([blob], filename, { type: 'application/zip' });
+        const shareFile = typeof navigator.canShare === 'function' && !navigator.canShare({ files: [file] }) && navigator.canShare({ files: [fallbackZipFile] })
+          ? fallbackZipFile
+          : file;
+        const canShareFiles = typeof navigator.canShare === 'function'
+          ? navigator.canShare({ files: [shareFile] })
+          : true;
+        if (canShareFiles) {
+          await navigator.share({
+            files: [shareFile],
+            title: options.title || filename,
+            text: options.text || ''
+          });
+          return 'shared';
+        }
+      } catch (error) {
+        if (error?.name === 'AbortError') return 'cancelled';
+        console.warn('ZIP share failed, falling back to download', error);
+      }
+    }
+    downloadBlobFile(filename, blob);
+    return 'downloaded';
+  }
+
+  async function exportPlansAsPackage() {
     if (!plans.length) return;
     const pack = buildTravelPackage();
-    const fileName = `travel-plans-${getTodayDateString()}.zip`;
-    downloadBlobFile(fileName, createZipBlob(pack.entries));
-    showEphemeralToast(uiText.toast.exportedPlans, `${pack.payload.planCount} 个计划 · ${pack.assets.length} 张图片 · ${fileName}`);
+    const fileName = `travel-plans-${getTodayDateString()}.${TRAVEL_PACKAGE_EXTENSION}`;
+    const result = await shareOrDownloadBlobFile(fileName, createZipBlob(pack.entries), {
+      title: '旅行计划包',
+      text: `${pack.payload.planCount} 个旅行计划`
+    });
+    if (result !== 'cancelled') {
+      showEphemeralToast(uiText.toast.exportedPlans, `${pack.payload.planCount} 个计划 · ${pack.assets.length} 张图片 · ${result === 'shared' ? '已打开分享' : fileName}`);
+    }
   }
 
   function getExportFilenameSegment(value, fallback = 'plan') {
@@ -9186,13 +9231,18 @@
     return normalized || fallback;
   }
 
-  function exportSinglePlanAsPackage(planId) {
+  async function exportSinglePlanAsPackage(planId) {
     const plan = getPlan(planId);
     if (!plan) return;
     const pack = buildTravelPackage([plan]);
-    const fileName = `travel-plan-${getExportFilenameSegment(plan.title, String(plan.id))}-${getTodayDateString()}.zip`;
-    downloadBlobFile(fileName, createZipBlob(pack.entries));
-    showEphemeralToast(uiText.toast.exportedPlans, `${plan.title} · ${pack.assets.length} 张图片 · ${fileName}`);
+    const fileName = `travel-plan-${getExportFilenameSegment(plan.title, String(plan.id))}-${getTodayDateString()}.${TRAVEL_PACKAGE_EXTENSION}`;
+    const result = await shareOrDownloadBlobFile(fileName, createZipBlob(pack.entries), {
+      title: plan.title,
+      text: `${plan.title} 旅行计划`
+    });
+    if (result !== 'cancelled') {
+      showEphemeralToast(uiText.toast.exportedPlans, `${plan.title} · ${pack.assets.length} 张图片 · ${result === 'shared' ? '已打开分享' : fileName}`);
+    }
   }
 
   async function showDataToolsSheet() {
@@ -9211,7 +9261,7 @@
       actions
     });
     if (decision === 'import') showImportModal();
-    if (decision === 'export') exportPlansAsPackage();
+    if (decision === 'export') await exportPlansAsPackage();
   }
 
   function showImportModal() {
@@ -9219,13 +9269,13 @@
       <div class="modal-overlay" id="modal"><div class="modal wide" role="dialog" aria-modal="true" aria-label="导入旅行计划">
         <div class="modal-header">
           <h3>导入旅行计划</h3>
-          <div class="modal-subtitle">支持当前应用导出的 ZIP 旅行包，旧版 JSON 备份也可以继续导入。导入前会自动做结构校验与格式修正。</div>
+          <div class="modal-subtitle">支持当前应用导出的 .travelplan 旅行包，旧版 ZIP / JSON 备份也可以继续导入。导入前会自动做结构校验与格式修正。</div>
         </div>
         <div class="modal-body">
           <div class="import-file-card">
             <div class="import-file-copy">
               <div class="import-file-name" id="importFileName">尚未选择文件</div>
-              <div class="import-file-meta" id="importFileMeta">请选择一个 .zip 旅行包，或旧版 .json 备份。</div>
+              <div class="import-file-meta" id="importFileMeta">请选择一个 .travelplan 旅行包，或旧版 .zip / .json 备份。</div>
             </div>
             <button class="tool-btn primary" type="button" id="pickImportFileBtn">选择文件</button>
           </div>
@@ -9246,14 +9296,14 @@
             <div class="range-summary-title" id="importPreviewTitle">等待文件</div>
             <div class="range-summary-meta" id="importPreviewMeta">导入前不会改动本地数据。</div>
           </div>
-          <div class="modal-note" id="importStatusNote">建议定期导出为 ZIP 旅行包，图片会随文件一起分享。</div>
+          <div class="modal-note" id="importStatusNote">建议定期导出为 .travelplan 旅行包，图片会随文件一起分享。</div>
         </div>
         <div class="modal-footer"><button class="btn" id="confirmImportBtn" disabled>导入</button><button class="btn secondary" id="cancelImportBtn">取消</button></div>
       </div></div>`;
     const { modal, panel, close: closeModal } = mountModal(html);
     const fileInput = document.createElement('input');
     fileInput.type = 'file';
-    fileInput.accept = '.zip,.json,application/zip,application/json';
+    fileInput.accept = `.travelplan,.zip,.json,${TRAVEL_PACKAGE_MIME},application/zip,application/json`;
     fileInput.style.display = 'none';
     panel.appendChild(fileInput);
 
@@ -9276,10 +9326,10 @@
     const syncFileUi = () => {
       if (!draftFileState) {
         fileNameEl.textContent = '尚未选择文件';
-        fileMetaEl.textContent = '请选择一个 .zip 旅行包，或旧版 .json 备份。';
+        fileMetaEl.textContent = '请选择一个 .travelplan 旅行包，或旧版 .zip / .json 备份。';
         previewTitleEl.textContent = '等待文件';
         previewMetaEl.textContent = '导入前不会改动本地数据。';
-        statusEl.textContent = '建议定期导出为 ZIP 旅行包，图片会随文件一起分享。';
+        statusEl.textContent = '建议定期导出为 .travelplan 旅行包，图片会随文件一起分享。';
         confirmBtn.disabled = true;
         return;
       }
